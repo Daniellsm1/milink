@@ -33,10 +33,7 @@ export function VehicleCard({ vehicle, onPress, onReservar }: Props) {
       : "Sec";
 
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${vehicle.brand} ${vehicle.model}, ${vehicle.loc}`}
+    <View
       className="flex-1 rounded-2xl overflow-hidden bg-white border border-line"
       style={{
         shadowColor: "#0F172A",
@@ -46,6 +43,12 @@ export function VehicleCard({ vehicle, onPress, onReservar }: Props) {
         elevation: 2,
       }}
     >
+      {/* Contenido tocable -> detalle */}
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${vehicle.brand} ${vehicle.model}, ${vehicle.loc}`}
+      >
       {/* Imagen + badges */}
       <View
         className="h-[120px]"
@@ -117,6 +120,7 @@ export function VehicleCard({ vehicle, onPress, onReservar }: Props) {
           </Text>
         </View>
       </View>
+      </Pressable>
 
       {/* Botón Reservar */}
       <Pressable
@@ -137,6 +141,6 @@ export function VehicleCard({ vehicle, onPress, onReservar }: Props) {
           Reservar
         </Text>
       </Pressable>
-    </Pressable>
+    </View>
   );
 }
