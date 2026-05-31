@@ -43,6 +43,7 @@ export default function RootLayout() {
             name="vehicle/[id]"
             options={{ title: "Detalle del vehículo" }}
           />
+          <Stack.Screen name="auth/login" options={{ headerShown: false }} />
           <Stack.Screen
             name="auth/register"
             options={{ presentation: "modal", title: "Registro y verificación" }}

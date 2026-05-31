@@ -13,13 +13,16 @@ import { CATEGORIAS, DISPONIBLES, NUEVAS } from "../../src/data/mock";
 
 function HeaderIconButton({
   label,
+  onPress,
   children,
 }: {
   label: string;
+  onPress?: () => void;
   children: React.ReactNode;
 }) {
   return (
     <Pressable
+      onPress={onPress}
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel={label}
@@ -71,7 +74,10 @@ export default function Explorar() {
                   <HeaderIconButton label="Compartir">
                     <Share2 size={17} color={COLORS.text} />
                   </HeaderIconButton>
-                  <HeaderIconButton label="Perfil">
+                  <HeaderIconButton
+                    label="Perfil"
+                    onPress={() => router.push("/auth/login")}
+                  >
                     <User size={17} color={COLORS.text} />
                   </HeaderIconButton>
                 </View>

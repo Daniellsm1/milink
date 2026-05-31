@@ -11,7 +11,7 @@ export default function Perfil() {
         Inicia sesión para ver tus publicaciones, reservas y calificaciones.
       </Text>
       <Pressable
-        onPress={() => router.push("/auth/register")}
+        onPress={() => router.push("/auth/login")}
         className="bg-slate-900 rounded-xl px-6 py-3"
       >
         <Text className="text-white font-semibold">
