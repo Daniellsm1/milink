@@ -76,7 +76,7 @@ export default function Explorar() {
                   </HeaderIconButton>
                   <HeaderIconButton
                     label="Perfil"
-                    onPress={() => router.push("/auth/login")}
+                    onPress={() => router.push("/profile")}
                   >
                     <User size={17} color={COLORS.text} />
                   </HeaderIconButton>
