@@ -156,6 +156,33 @@ export const Eye = (p: IconProps) => (
   </Stroke>
 );
 
+export const Check = (p: IconProps) => (
+  <Stroke {...p}>
+    <Polyline points="20 6 9 17 4 12" />
+  </Stroke>
+);
+
+export const X = (p: IconProps) => (
+  <Stroke {...p}>
+    <Line x1="18" y1="6" x2="6" y2="18" />
+    <Line x1="6" y1="6" x2="18" y2="18" />
+  </Stroke>
+);
+
+export const Plus = (p: IconProps) => (
+  <Stroke {...p}>
+    <Line x1="12" y1="5" x2="12" y2="19" />
+    <Line x1="5" y1="12" x2="19" y2="12" />
+  </Stroke>
+);
+
+export const Camera = (p: IconProps) => (
+  <Stroke {...p}>
+    <Path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z" />
+    <Circle cx="12" cy="13" r="3" />
+  </Stroke>
+);
+
 export const EyeOff = (p: IconProps) => (
   <Stroke {...p}>
     <Path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />

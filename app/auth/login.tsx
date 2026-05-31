@@ -1,5 +1,7 @@
 import { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,6 +13,7 @@ import {
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { supabase } from "../../src/lib/supabase";
 import {
   AppleIcon,
   ChevronLeft,
@@ -49,13 +52,31 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    // TODO: conectar con Supabase Auth (signInWithPassword)
+  const handleLogin = async () => {
+    if (!email.trim() || !password) {
+      Alert.alert("Faltan datos", "Ingresa tu correo y contraseña.");
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    setLoading(false);
+    if (error) {
+      Alert.alert("No pudimos iniciar sesión", error.message);
+      return;
+    }
+    router.back();
   };
 
   const handleSocial = (_provider: "google" | "facebook" | "apple") => {
-    // TODO: conectar con OAuth de Supabase
+    Alert.alert(
+      "Próximamente",
+      "El inicio de sesión con redes sociales estará disponible pronto."
+    );
   };
 
   return (
@@ -150,6 +171,7 @@ export default function Login() {
           <View className="items-center">
             <Pressable
               onPress={handleLogin}
+              disabled={loading}
               accessibilityRole="button"
               accessibilityLabel="Ingresar"
               className="w-48 h-14 rounded-full items-center justify-center bg-accent active:opacity-90"
@@ -159,11 +181,16 @@ export default function Login() {
                 shadowRadius: 12,
                 shadowOffset: { width: 0, height: 6 },
                 elevation: 6,
+                opacity: loading ? 0.7 : 1,
               }}
             >
-              <Text className="font-quicksand-bold text-[15px] text-white tracking-wider">
-                INGRESAR
-              </Text>
+              {loading ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <Text className="font-quicksand-bold text-[15px] text-white tracking-wider">
+                  INGRESAR
+                </Text>
+              )}
             </Pressable>
           </View>
 

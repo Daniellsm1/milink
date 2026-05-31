@@ -13,6 +13,7 @@ export type CombustibleTipo =
   | "gas";
 export type VehiculoCategoria = "automovil" | "camioneta" | "motocicleta";
 export type PropiedadTipo = "finca" | "apartamento" | "casa";
+export type PublicacionStatus = "pending_approval" | "approved" | "rejected";
 
 export type VehiculoRow = {
   id: string;
@@ -40,15 +41,40 @@ export type VehiculoRow = {
   descripcion: string | null;
   imagenes: string[];
   disponible: boolean;
+  status: PublicacionStatus;
   created_at: string;
   updated_at: string;
 };
 
-export type VehiculoInsert = Omit<
-  VehiculoRow,
-  "id" | "created_at" | "updated_at"
-> & {
+// Campos requeridos al insertar; los nullables y los que tienen DEFAULT en la
+// BD quedan opcionales.
+export type VehiculoInsert = {
   id?: string;
+  usuario_id: string;
+  marca: string;
+  modelo: string;
+  ano: number;
+  color?: string | null;
+  placa_terminacion?: number | null;
+  kilometraje?: number;
+  transmision: TransmisionTipo;
+  tipo_combustible: CombustibleTipo;
+  categoria: VehiculoCategoria;
+  numero_sillas?: number | null;
+  capacidad_baul_litros?: number | null;
+  fecha_vencimiento_soat?: string | null;
+  fecha_vencimiento_tecnomec?: string | null;
+  tiene_aire_acondicionado?: boolean;
+  precio_alquiler_diario: number;
+  kilometraje_permitido_diario?: number | null;
+  deposito_garantia?: number | null;
+  permite_conductor_adicional?: boolean;
+  ciudad_entrega_principal: string;
+  ciudad_entrega_opcional?: string | null;
+  descripcion?: string | null;
+  imagenes?: string[];
+  disponible?: boolean;
+  status?: PublicacionStatus;
   created_at?: string;
   updated_at?: string;
 };
@@ -76,15 +102,33 @@ export type PropiedadRow = {
   tiene_zona_bbq: boolean;
   imagenes: string[];
   disponible: boolean;
+  status: PublicacionStatus;
   created_at: string;
   updated_at: string;
 };
 
-export type PropiedadInsert = Omit<
-  PropiedadRow,
-  "id" | "created_at" | "updated_at"
-> & {
+export type PropiedadInsert = {
   id?: string;
+  usuario_id: string;
+  tipo_propiedad: PropiedadTipo;
+  titulo: string;
+  descripcion?: string | null;
+  precio_alquiler_diario: number;
+  departamento: string;
+  ciudad_municipio: string;
+  capacidad_huespedes: number;
+  numero_habitaciones: number;
+  numero_camas: number;
+  numero_banos: number;
+  tiene_piscina?: boolean;
+  tiene_wifi?: boolean;
+  tiene_parqueadero?: boolean;
+  tiene_aire_acondicionado?: boolean;
+  es_pet_friendly?: boolean;
+  tiene_zona_bbq?: boolean;
+  imagenes?: string[];
+  disponible?: boolean;
+  status?: PublicacionStatus;
   created_at?: string;
   updated_at?: string;
 };
@@ -121,16 +165,19 @@ export type Database = {
         Row: VehiculoRow;
         Insert: VehiculoInsert;
         Update: VehiculoUpdate;
+        Relationships: [];
       };
       propiedades: {
         Row: PropiedadRow;
         Insert: PropiedadInsert;
         Update: PropiedadUpdate;
+        Relationships: [];
       };
       resenas: {
         Row: ResenaRow;
         Insert: ResenaInsert;
         Update: ResenaUpdate;
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
@@ -140,6 +187,7 @@ export type Database = {
       combustible_tipo: CombustibleTipo;
       vehiculo_categoria: VehiculoCategoria;
       propiedad_tipo: PropiedadTipo;
+      publicacion_status: PublicacionStatus;
     };
     CompositeTypes: Record<string, never>;
   };
