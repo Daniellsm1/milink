@@ -183,6 +183,31 @@ export const Camera = (p: IconProps) => (
   </Stroke>
 );
 
+export const Seat = (p: IconProps) => (
+  <Stroke {...p}>
+    <Path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3" />
+    <Path d="M3 11v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H7v-2a2 2 0 0 0-4 0Z" />
+    <Path d="M5 18v2" />
+    <Path d="M19 18v2" />
+  </Stroke>
+);
+
+export const Calendar = (p: IconProps) => (
+  <Stroke {...p}>
+    <Rect x="3" y="4" width="18" height="18" rx="2" />
+    <Line x1="3" y1="10" x2="21" y2="10" />
+    <Line x1="8" y1="2" x2="8" y2="6" />
+    <Line x1="16" y1="2" x2="16" y2="6" />
+  </Stroke>
+);
+
+export const Gauge = (p: IconProps) => (
+  <Stroke {...p}>
+    <Path d="m12 14 4-4" />
+    <Path d="M3.34 19a10 10 0 1 1 17.32 0" />
+  </Stroke>
+);
+
 export const EyeOff = (p: IconProps) => (
   <Stroke {...p}>
     <Path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" />
@@ -327,6 +352,20 @@ export const AppleIcon = ({
       d="M17.05 12.04c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.89-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.78 1.3 10.32.86 1.24 1.89 2.64 3.23 2.59 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.38.81 1.4-.02 2.28-1.27 3.13-2.52.99-1.44 1.4-2.84 1.42-2.91-.03-.01-2.72-1.04-2.75-4.13M14.46 4.39c.71-.86 1.19-2.06 1.06-3.25-1.02.04-2.26.68-2.99 1.54-.66.76-1.23 1.98-1.08 3.15 1.14.09 2.3-.58 3.01-1.44"
     />
   </Svg>
+);
+
+// Estrella llena (calificaciones)
+export const Star = (p: IconProps) => (
+  <Filled {...p}>
+    <Path d="M12 2.5l2.9 5.88 6.49.94-4.7 4.58 1.11 6.46L12 17.8l-5.8 3.05 1.11-6.46-4.7-4.58 6.49-.94L12 2.5Z" />
+  </Filled>
+);
+
+// Corazón lleno (favorito activo)
+export const HeartFilled = (p: IconProps) => (
+  <Filled {...p}>
+    <Path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+  </Filled>
 );
 
 // Mapa categoría -> icono lleno
