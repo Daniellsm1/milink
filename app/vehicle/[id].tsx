@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
+import Animated, { FadeIn, Keyframe } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -31,6 +32,13 @@ import {
   getDetalleById,
   type CaracteristicaIcono,
 } from "../../src/data/detail";
+
+// Animación "hero": la imagen del detalle aparece con fade + un leve zoom,
+// evocando un shared element (la tarjeta que "crece" hacia el detalle).
+const heroEnter = new Keyframe({
+  0: { opacity: 0, transform: [{ scale: 1.08 }] },
+  100: { opacity: 1, transform: [{ scale: 1 }] },
+}).duration(380);
 
 const ICONO_CARACTERISTICA: Record<
   CaracteristicaIcono,
@@ -101,52 +109,57 @@ export default function DetalleVehiculo() {
         contentContainerStyle={{ paddingBottom: 110 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Carrusel de imágenes */}
+        {/* Carrusel de imágenes. El contenedor externo NO lleva transform
+            (es el hermano del contenido con marginTop negativo); el efecto
+            hero (fade + zoom) va en un wrapper interno para no romper el
+            apilamiento en web. */}
         <View
           onLayout={(e) => setCarruselW(e.nativeEvent.layout.width)}
-          style={{ height: 320 }}
+          style={{ height: 320, overflow: "hidden" }}
         >
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={(e) => {
-              if (carruselW > 0) {
-                setIndice(
-                  Math.round(e.nativeEvent.contentOffset.x / carruselW)
-                );
-              }
-            }}
-          >
-            {item.imagenes.map((uri, i) => (
-              <Image
-                key={i}
-                source={uri}
-                style={{ width: carruselW || 360, height: 320 }}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-                transition={150}
-              />
-            ))}
-          </ScrollView>
-
-          {/* Dots */}
-          {item.imagenes.length > 1 ? (
-            <View className="absolute bottom-4 left-0 right-0 flex-row items-center justify-center gap-1.5">
-              {item.imagenes.map((_, i) => (
-                <View
+          <Animated.View entering={heroEnter} style={{ flex: 1 }}>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(e) => {
+                if (carruselW > 0) {
+                  setIndice(
+                    Math.round(e.nativeEvent.contentOffset.x / carruselW)
+                  );
+                }
+              }}
+            >
+              {item.imagenes.map((uri, i) => (
+                <Image
                   key={i}
-                  style={{
-                    width: i === indice ? 20 : 7,
-                    height: 7,
-                    borderRadius: 999,
-                    backgroundColor:
-                      i === indice ? COLORS.white : "rgba(255,255,255,0.6)",
-                  }}
+                  source={uri}
+                  style={{ width: carruselW || 360, height: 320 }}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  transition={150}
                 />
               ))}
-            </View>
-          ) : null}
+            </ScrollView>
+
+            {/* Dots */}
+            {item.imagenes.length > 1 ? (
+              <View className="absolute bottom-4 left-0 right-0 flex-row items-center justify-center gap-1.5">
+                {item.imagenes.map((_, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      width: i === indice ? 20 : 7,
+                      height: 7,
+                      borderRadius: 999,
+                      backgroundColor:
+                        i === indice ? COLORS.white : "rgba(255,255,255,0.6)",
+                    }}
+                  />
+                ))}
+              </View>
+            ) : null}
+          </Animated.View>
         </View>
 
         {/* Barra flotante superior */}
@@ -193,8 +206,9 @@ export default function DetalleVehiculo() {
           </View>
         </View>
 
-        {/* Contenido */}
-        <View
+        {/* Contenido (fade suave, ligeramente después del hero) */}
+        <Animated.View
+          entering={FadeIn.duration(320).delay(120)}
           className="bg-white rounded-t-[28px] px-5 pt-6"
           style={{ marginTop: -24 }}
         >
@@ -272,7 +286,7 @@ export default function DetalleVehiculo() {
               </View>
             </View>
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Barra de acción inferior fija */}
