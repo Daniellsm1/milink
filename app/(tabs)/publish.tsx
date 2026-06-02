@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useSession } from "../../src/lib/auth";
 import { Checkbox } from "../../src/components/form/Checkbox";
+import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import {
   TERMINOS_CHECKBOXES,
   TERMINOS_SECCIONES,
@@ -12,6 +13,7 @@ import {
 export default function PublicarLegal() {
   const router = useRouter();
   const { user } = useSession();
+  const tabBarH = useTabBarHeight();
   const [marcados, setMarcados] = useState<Record<string, boolean>>({});
 
   const todosMarcados = useMemo(
@@ -79,8 +81,12 @@ export default function PublicarLegal() {
         </View>
       </ScrollView>
 
-      {/* Botón continuar */}
-      <View className="px-5 pt-3 pb-5 border-t border-line bg-white">
+      {/* Botón continuar — paddingBottom reserva el espacio del tab bar
+          para que el botón nunca quede oculto detrás de él. */}
+      <View
+        className="px-5 pt-3 border-t border-line bg-white"
+        style={{ paddingBottom: tabBarH + 12 }}
+      >
         <Pressable
           onPress={() => {
             if (!user) {

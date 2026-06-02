@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { LayoutGrid, Heart, PlusCircle, User, type IconProps } from "./icons";
 import { COLORS } from "../theme/colors";
+import { TAB_BAR_BASE_HEIGHT } from "./tabBarMetrics";
 
 type TabMeta = {
   label: string;
@@ -32,6 +33,7 @@ export function CustomTabBar({
       style={{
         paddingBottom: Math.max(insets.bottom, 12),
         backgroundColor: "rgba(255,255,255,0.85)",
+        minHeight: TAB_BAR_BASE_HEIGHT + Math.max(insets.bottom, 12),
       }}
     >
       <View className="flex-row items-center justify-around">

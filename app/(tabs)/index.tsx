@@ -8,6 +8,7 @@ import { NewArrivalsCarousel } from "../../src/components/NewArrivalsCarousel";
 import { CategoryPill } from "../../src/components/CategoryPill";
 import { VehicleCard } from "../../src/components/VehicleCard";
 import { Heart, Share2, User } from "../../src/components/icons";
+import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
 import { CATEGORIAS, DISPONIBLES, NUEVAS } from "../../src/data/mock";
 
@@ -35,6 +36,7 @@ function HeaderIconButton({
 
 export default function Explorar() {
   const router = useRouter();
+  const tabBarH = useTabBarHeight();
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-bg">
@@ -43,7 +45,7 @@ export default function Explorar() {
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={{ gap: 12, paddingHorizontal: 20 }}
-        contentContainerStyle={{ gap: 12, paddingBottom: 120 }}
+        contentContainerStyle={{ gap: 12, paddingBottom: tabBarH + 16 }}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <VehicleCard

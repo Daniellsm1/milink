@@ -1,17 +1,22 @@
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useSession } from "../../src/lib/auth";
 import { User } from "../../src/components/icons";
+import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
 
 export default function Perfil() {
   const router = useRouter();
   const { user, signOut } = useSession();
+  const tabBarH = useTabBarHeight();
 
   if (!user) {
     return (
-      <View className="flex-1 bg-white items-center justify-center p-6 gap-4">
+      <View
+        className="flex-1 bg-white items-center justify-center p-6 gap-4"
+        style={{ paddingBottom: tabBarH + 16 }}
+      >
         <Text className="font-quicksand-bold text-xl text-ink">Tu perfil</Text>
         <Text className="text-muted font-quicksand-medium text-center">
           Inicia sesión para ver tus publicaciones, reservas y calificaciones.
@@ -32,7 +37,15 @@ export default function Perfil() {
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-white">
-      <View className="flex-1 items-center p-6 gap-4">
+      <ScrollView
+        contentContainerStyle={{
+          alignItems: "center",
+          padding: 24,
+          gap: 16,
+          paddingBottom: tabBarH + 16,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
         <View className="w-20 h-20 rounded-full bg-accentSoft items-center justify-center mt-6">
           <User size={36} color={COLORS.accent} />
         </View>
@@ -59,7 +72,7 @@ export default function Perfil() {
             </Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
