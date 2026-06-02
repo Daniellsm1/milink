@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
 import { SearchBar } from "../../src/components/SearchBar";
 import { SectionHeader } from "../../src/components/SectionHeader";
 import { NewArrivalsCarousel } from "../../src/components/NewArrivalsCarousel";
@@ -11,6 +13,7 @@ import { Heart, Share2, User } from "../../src/components/icons";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
 import { CATEGORIAS, DISPONIBLES, NUEVAS } from "../../src/data/mock";
+import { listarVehiculosAprobados } from "../../src/services/feed";
 
 function HeaderIconButton({
   label,
@@ -38,10 +41,23 @@ export default function Explorar() {
   const router = useRouter();
   const tabBarH = useTabBarHeight();
 
+  // Feed real: vehículos aprobados de Supabase. Si falla o está vacío,
+  // caen los mocks para que la pantalla nunca se vea vacía durante el desarrollo.
+  const aprobadosQuery = useQuery({
+    queryKey: ["vehiculos-aprobados"],
+    queryFn: () => listarVehiculosAprobados(20),
+    staleTime: 30_000,
+  });
+
+  const disponibles = useMemo(() => {
+    const reales = aprobadosQuery.data ?? [];
+    return reales.length > 0 ? [...reales, ...DISPONIBLES] : DISPONIBLES;
+  }, [aprobadosQuery.data]);
+
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-bg">
       <FlatList
-        data={DISPONIBLES}
+        data={disponibles}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={{ gap: 12, paddingHorizontal: 20 }}

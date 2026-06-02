@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Linking,
   Pressable,
@@ -8,6 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useQuery } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import Animated, { FadeIn, Keyframe } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,7 +31,7 @@ import {
 import { Avatar } from "../../src/components/Avatar";
 import { COLORS } from "../../src/theme/colors";
 import {
-  getDetalleById,
+  fetchDetalleById,
   type CaracteristicaIcono,
 } from "../../src/data/detail";
 
@@ -57,10 +59,23 @@ export default function DetalleVehiculo() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const item = getDetalleById(id ?? "");
+  const detalleQuery = useQuery({
+    queryKey: ["detalle", id],
+    queryFn: () => fetchDetalleById(id ?? ""),
+    enabled: !!id,
+  });
+  const item = detalleQuery.data;
   const [favorito, setFavorito] = useState(false);
   const [carruselW, setCarruselW] = useState(0);
   const [indice, setIndice] = useState(0);
+
+  if (detalleQuery.isLoading) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator color={COLORS.accent} />
+      </View>
+    );
+  }
 
   if (!item) {
     return (

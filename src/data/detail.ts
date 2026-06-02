@@ -2,6 +2,7 @@
 // Diseñado para que luego se reemplace por una consulta a Supabase devolviendo
 // la misma forma `DetailItem`.
 import { DISPONIBLES, NUEVAS } from "./mock";
+import { supabase } from "../lib/supabase";
 
 export type CaracteristicaIcono =
   | "combustible"
@@ -103,4 +104,62 @@ export function getDetalleById(id: string): DetailItem | null {
   }
 
   return null;
+}
+
+/**
+ * Versión asíncrona: primero busca en mocks; si no encuentra, consulta Supabase
+ * (tabla `vehiculos`) buscando una publicación aprobada con ese id. Devuelve
+ * null si no existe en ninguna de las dos fuentes.
+ */
+export async function fetchDetalleById(id: string): Promise<DetailItem | null> {
+  const enMock = getDetalleById(id);
+  if (enMock) return enMock;
+
+  const { data, error } = await supabase
+    .from("vehiculos")
+    .select(
+      "id, marca, modelo, ano, ciudad_entrega_principal, precio_alquiler_diario, tipo_combustible, transmision, numero_sillas, kilometraje_permitido_diario, descripcion, imagenes"
+    )
+    .eq("id", id)
+    .eq("status", "approved")
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const fuel =
+    data.tipo_combustible === "electrico"
+      ? "Eléctrico"
+      : data.tipo_combustible === "hibrido"
+      ? "Híbrido"
+      : data.tipo_combustible === "diesel"
+      ? "Diésel"
+      : "Gasolina";
+  const trans = data.transmision === "automatico" ? "Automático" : "Manual";
+
+  return {
+    id: data.id,
+    titulo: `${data.marca} ${data.modelo}`,
+    ubicacion: `${data.ciudad_entrega_principal}, CO`,
+    precioDia: data.precio_alquiler_diario.toLocaleString("es-CO"),
+    imagenes: data.imagenes ?? [],
+    caracteristicas: [
+      { icono: "combustible", etiqueta: fuel },
+      { icono: "transmision", etiqueta: trans },
+      {
+        icono: "asientos",
+        etiqueta: `${data.numero_sillas ?? 5} asientos`,
+      },
+      { icono: "ano", etiqueta: String(data.ano) },
+      {
+        icono: "kilometraje",
+        etiqueta:
+          data.kilometraje_permitido_diario == null
+            ? "Ilimitado"
+            : `${data.kilometraje_permitido_diario} km/día`,
+      },
+    ],
+    descripcion:
+      data.descripcion ?? descripcionVehiculo(data.marca, data.modelo),
+    propietario: PROPIETARIO_DEMO,
+  };
 }

@@ -2,6 +2,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useSession } from "../../src/lib/auth";
+import { esAdmin } from "../../src/lib/admins";
 import { User } from "../../src/components/icons";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
@@ -63,6 +64,17 @@ export default function Perfil() {
               Publicar un bien
             </Text>
           </Pressable>
+          {esAdmin(user) ? (
+            <Pressable
+              onPress={() => router.push("/admin")}
+              className="rounded-2xl px-6 py-4 items-center border-2"
+              style={{ borderColor: COLORS.accent }}
+            >
+              <Text className="text-accent font-quicksand-bold">
+                Panel de moderación
+              </Text>
+            </Pressable>
+          ) : null}
           <Pressable
             onPress={signOut}
             className="rounded-2xl px-6 py-4 items-center border border-line"

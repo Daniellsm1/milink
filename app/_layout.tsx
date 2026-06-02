@@ -54,6 +54,10 @@ export default function RootLayout() {
               name="publish/form"
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="admin/index"
+              options={{ headerShown: false }}
+            />
           </Stack>
         </SafeAreaProvider>
       </SessionProvider>
