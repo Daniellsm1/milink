@@ -38,6 +38,7 @@ export type VehiculoRow = {
   permite_conductor_adicional: boolean;
   ciudad_entrega_principal: string;
   ciudad_entrega_opcional: string | null;
+  telefono_contacto: string | null;
   descripcion: string | null;
   imagenes: string[];
   disponible: boolean;
@@ -71,6 +72,7 @@ export type VehiculoInsert = {
   permite_conductor_adicional?: boolean;
   ciudad_entrega_principal: string;
   ciudad_entrega_opcional?: string | null;
+  telefono_contacto?: string | null;
   descripcion?: string | null;
   imagenes?: string[];
   disponible?: boolean;
@@ -100,6 +102,7 @@ export type PropiedadRow = {
   tiene_aire_acondicionado: boolean;
   es_pet_friendly: boolean;
   tiene_zona_bbq: boolean;
+  telefono_contacto: string | null;
   imagenes: string[];
   disponible: boolean;
   status: PublicacionStatus;
@@ -126,6 +129,7 @@ export type PropiedadInsert = {
   tiene_aire_acondicionado?: boolean;
   es_pet_friendly?: boolean;
   tiene_zona_bbq?: boolean;
+  telefono_contacto?: string | null;
   imagenes?: string[];
   disponible?: boolean;
   status?: PublicacionStatus;

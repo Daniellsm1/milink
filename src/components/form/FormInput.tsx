@@ -22,9 +22,11 @@ export function FormInput({
 }) {
   return (
     <View className="mb-4">
-      <Text className="text-[13px] text-ink font-quicksand-semibold mb-1.5">
-        {label}
-      </Text>
+      {label ? (
+        <Text className="text-[13px] text-ink font-quicksand-semibold mb-1.5">
+          {label}
+        </Text>
+      ) : null}
       <TextInput
         className={`rounded-2xl px-4 text-[15px] text-ink font-quicksand-medium bg-[#F1F5F9] ${
           error ? "border border-red-400" : ""

@@ -10,7 +10,7 @@ export async function listarVehiculosAprobados(
   const { data, error } = await supabase
     .from("vehiculos")
     .select(
-      "id, marca, modelo, precio_alquiler_diario, ciudad_entrega_principal, tipo_combustible, numero_sillas, transmision, imagenes"
+      "id, marca, modelo, precio_alquiler_diario, ciudad_entrega_principal, ciudad_entrega_opcional, tipo_combustible, numero_sillas, transmision, imagenes"
     )
     .eq("status", "approved")
     .order("created_at", { ascending: false })
@@ -35,6 +35,7 @@ export async function listarVehiculosAprobados(
       model: row.modelo,
       price: row.precio_alquiler_diario.toLocaleString("es-CO"),
       loc: row.ciudad_entrega_principal,
+      locOpcional: row.ciudad_entrega_opcional ?? undefined,
       fuel,
       seats: String(row.numero_sillas ?? 5),
       trans,

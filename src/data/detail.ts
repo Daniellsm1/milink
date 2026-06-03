@@ -118,7 +118,7 @@ export async function fetchDetalleById(id: string): Promise<DetailItem | null> {
   const { data, error } = await supabase
     .from("vehiculos")
     .select(
-      "id, marca, modelo, ano, ciudad_entrega_principal, precio_alquiler_diario, tipo_combustible, transmision, numero_sillas, kilometraje_permitido_diario, descripcion, imagenes"
+      "id, marca, modelo, ano, ciudad_entrega_principal, ciudad_entrega_opcional, precio_alquiler_diario, tipo_combustible, transmision, numero_sillas, kilometraje_permitido_diario, descripcion, imagenes, telefono_contacto"
     )
     .eq("id", id)
     .eq("status", "approved")
@@ -136,10 +136,14 @@ export async function fetchDetalleById(id: string): Promise<DetailItem | null> {
       : "Gasolina";
   const trans = data.transmision === "automatico" ? "Automático" : "Manual";
 
+  const ubicacion = data.ciudad_entrega_opcional
+    ? `${data.ciudad_entrega_principal} · ${data.ciudad_entrega_opcional}, CO`
+    : `${data.ciudad_entrega_principal}, CO`;
+
   return {
     id: data.id,
     titulo: `${data.marca} ${data.modelo}`,
-    ubicacion: `${data.ciudad_entrega_principal}, CO`,
+    ubicacion,
     precioDia: data.precio_alquiler_diario.toLocaleString("es-CO"),
     imagenes: data.imagenes ?? [],
     caracteristicas: [
@@ -160,6 +164,9 @@ export async function fetchDetalleById(id: string): Promise<DetailItem | null> {
     ],
     descripcion:
       data.descripcion ?? descripcionVehiculo(data.marca, data.modelo),
-    propietario: PROPIETARIO_DEMO,
+    propietario: {
+      ...PROPIETARIO_DEMO,
+      telefono: data.telefono_contacto ?? PROPIETARIO_DEMO.telefono,
+    },
   };
 }

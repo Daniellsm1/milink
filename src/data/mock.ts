@@ -29,6 +29,7 @@ export type Disponible = {
   model: string;
   price: string;
   loc: string;
+  locOpcional?: string;
   fuel: "Gasolina" | "Eléctrico" | "Híbrido";
   seats: string;
   trans: "Automático" | "Manual";

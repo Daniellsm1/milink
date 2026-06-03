@@ -22,8 +22,10 @@ export type VehiculoFormData = {
   kilometraje: number;
   precio_alquiler_diario: number;
   ciudad_entrega_principal: string;
+  ciudad_entrega_opcional: string | null;
   kilometraje_permitido_diario: number | null;
   tiene_aire_acondicionado: boolean;
+  telefono_contacto: string;
   descripcion: string | null;
 };
 
@@ -43,6 +45,7 @@ export type PropiedadFormData = {
   tiene_aire_acondicionado: boolean;
   es_pet_friendly: boolean;
   tiene_zona_bbq: boolean;
+  telefono_contacto: string;
   descripcion: string | null;
 };
 

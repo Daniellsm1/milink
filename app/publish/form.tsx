@@ -18,12 +18,18 @@ import { FormInput } from "../../src/components/form/FormInput";
 import { FormSelect } from "../../src/components/form/FormSelect";
 import { FormToggle } from "../../src/components/form/FormToggle";
 import { PhotoPicker } from "../../src/components/form/PhotoPicker";
+import { CountryCodeSelect } from "../../src/components/form/CountryCodeSelect";
 import {
   crearPropiedad,
   crearVehiculo,
   type PropiedadFormData,
   type VehiculoFormData,
 } from "../../src/services/publicaciones";
+import {
+  propiedadSchema,
+  telefonoCompleto,
+  vehiculoSchema,
+} from "../../src/lib/validation/publicacion";
 
 type Tipo = "vehiculo" | "propiedad";
 
@@ -63,6 +69,11 @@ export default function PublicarFormulario() {
   const [fotos, setFotos] = useState<string[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [exito, setExito] = useState(false);
+  const [errores, setErrores] = useState<Record<string, string>>({});
+
+  // ── Teléfono de contacto (ambos tipos) ──
+  const [indicativo, setIndicativo] = useState("+57");
+  const [telefono, setTelefono] = useState("");
 
   // ── Estado Vehículo ──
   const [vMarca, setVMarca] = useState("");
@@ -79,6 +90,7 @@ export default function PublicarFormulario() {
   const [vKilometraje, setVKilometraje] = useState("");
   const [vPrecio, setVPrecio] = useState("");
   const [vCiudad, setVCiudad] = useState("");
+  const [vCiudadOpcional, setVCiudadOpcional] = useState("");
   const [vKmDia, setVKmDia] = useState("");
   const [vAire, setVAire] = useState(false);
   const [vDescripcion, setVDescripcion] = useState("");
@@ -128,18 +140,71 @@ export default function PublicarFormulario() {
     !!pCamas.trim() &&
     !!pBanos.trim();
 
+  const telefonoOk = !!indicativo && /^\d{7,12}$/.test(telefono.trim());
+
   const puedeGuardar = useMemo(() => {
-    if (!tieneTresFotos) return false;
+    if (!tieneTresFotos || !telefonoOk) return false;
     return tipo === "vehiculo" ? vehiculoCompleto : propiedadCompleta;
-  }, [tieneTresFotos, tipo, vehiculoCompleto, propiedadCompleta]);
+  }, [tieneTresFotos, telefonoOk, tipo, vehiculoCompleto, propiedadCompleta]);
 
   const guardar = async () => {
     if (!tieneTresFotos) {
       Alert.alert("Faltan fotos", "Debes adjuntar exactamente 3 fotografías.");
       return;
     }
+
+    // Validación con Zod según el tipo. Si falla, mostramos errores por campo.
+    const parsed =
+      tipo === "vehiculo"
+        ? vehiculoSchema.safeParse({
+            marca: vMarca,
+            modelo: vModelo,
+            ano: vAno,
+            categoria: vCategoria ?? "",
+            transmision: vTransmision ?? "",
+            combustible: vCombustible ?? "",
+            color: vColor,
+            sillas: vSillas,
+            kilometraje: vKilometraje,
+            precio: vPrecio,
+            ciudad: vCiudad,
+            ciudadOpcional: vCiudadOpcional,
+            indicativo,
+            telefono,
+          })
+        : propiedadSchema.safeParse({
+            tipoPropiedad: pTipo ?? "",
+            titulo: pTitulo,
+            departamento: pDepartamento,
+            ciudad: pCiudad,
+            precio: pPrecio,
+            huespedes: pHuespedes,
+            habitaciones: pHabitaciones,
+            camas: pCamas,
+            banos: pBanos,
+            indicativo,
+            telefono,
+          });
+
+    if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      const mapped: Record<string, string> = {};
+      Object.entries(fieldErrors).forEach(([k, v]) => {
+        if (v && v[0]) mapped[k] = v[0];
+      });
+      setErrores(mapped);
+      Alert.alert(
+        "Revisa el formulario",
+        "Hay campos obligatorios incompletos o con formato inválido."
+      );
+      return;
+    }
+    setErrores({});
+
     setEnviando(true);
     try {
+      const telefono_contacto = telefonoCompleto(indicativo, telefono);
+
       if (tipo === "vehiculo") {
         const data: VehiculoFormData = {
           marca: vMarca.trim(),
@@ -153,8 +218,10 @@ export default function PublicarFormulario() {
           kilometraje: toNum(vKilometraje),
           precio_alquiler_diario: toNum(vPrecio),
           ciudad_entrega_principal: vCiudad.trim(),
+          ciudad_entrega_opcional: vCiudadOpcional.trim() || null,
           kilometraje_permitido_diario: vKmDia.trim() ? toNum(vKmDia) : null,
           tiene_aire_acondicionado: vAire,
+          telefono_contacto,
           descripcion: vDescripcion.trim() || null,
         };
         await crearVehiculo(data, fotos);
@@ -175,6 +242,7 @@ export default function PublicarFormulario() {
           tiene_aire_acondicionado: pAire,
           es_pet_friendly: pPet,
           tiene_zona_bbq: pBbq,
+          telefono_contacto,
           descripcion: pDescripcion.trim() || null,
         };
         await crearPropiedad(data, fotos);
@@ -243,32 +311,33 @@ export default function PublicarFormulario() {
 
           {tipo === "vehiculo" ? (
             <>
-              <FormInput label="Marca" value={vMarca} onChangeText={setVMarca} placeholder="Ej. Toyota" autoCapitalize="words" />
-              <FormInput label="Modelo" value={vModelo} onChangeText={setVModelo} placeholder="Ej. Prado VX" autoCapitalize="words" />
-              <FormInput label="Año" value={vAno} onChangeText={setVAno} placeholder="Ej. 2022" keyboardType="numeric" />
-              <FormSelect label="Categoría" value={vCategoria} options={CATEGORIAS as any} onChange={setVCategoria} />
-              <FormSelect label="Transmisión" value={vTransmision} options={TRANSMISIONES as any} onChange={setVTransmision} />
-              <FormSelect label="Combustible" value={vCombustible} options={COMBUSTIBLES as any} onChange={setVCombustible} />
-              <FormInput label="Color" value={vColor} onChangeText={setVColor} placeholder="Ej. Blanco" autoCapitalize="words" />
-              <FormInput label="Número de sillas" value={vSillas} onChangeText={setVSillas} placeholder="Ej. 5" keyboardType="numeric" />
-              <FormInput label="Kilometraje" value={vKilometraje} onChangeText={setVKilometraje} placeholder="Ej. 35000" keyboardType="numeric" />
-              <FormInput label="Precio por día (COP)" value={vPrecio} onChangeText={setVPrecio} placeholder="Ej. 250000" keyboardType="numeric" />
-              <FormInput label="Ciudad de entrega" value={vCiudad} onChangeText={setVCiudad} placeholder="Ej. Bogotá" autoCapitalize="words" />
+              <FormInput label="Marca" value={vMarca} onChangeText={setVMarca} placeholder="Ej. Toyota" autoCapitalize="words" error={errores.marca} />
+              <FormInput label="Modelo" value={vModelo} onChangeText={setVModelo} placeholder="Ej. Prado VX" autoCapitalize="words" error={errores.modelo} />
+              <FormInput label="Año" value={vAno} onChangeText={setVAno} placeholder="Ej. 2022" keyboardType="numeric" error={errores.ano} />
+              <FormSelect label="Categoría" value={vCategoria} options={CATEGORIAS as any} onChange={setVCategoria} error={errores.categoria} />
+              <FormSelect label="Transmisión" value={vTransmision} options={TRANSMISIONES as any} onChange={setVTransmision} error={errores.transmision} />
+              <FormSelect label="Combustible" value={vCombustible} options={COMBUSTIBLES as any} onChange={setVCombustible} error={errores.combustible} />
+              <FormInput label="Color" value={vColor} onChangeText={setVColor} placeholder="Ej. Blanco" autoCapitalize="words" error={errores.color} />
+              <FormInput label="Número de sillas" value={vSillas} onChangeText={setVSillas} placeholder="Ej. 5" keyboardType="numeric" error={errores.sillas} />
+              <FormInput label="Kilometraje" value={vKilometraje} onChangeText={setVKilometraje} placeholder="Ej. 35000" keyboardType="numeric" error={errores.kilometraje} />
+              <FormInput label="Precio por día (COP)" value={vPrecio} onChangeText={setVPrecio} placeholder="Ej. 250000" keyboardType="numeric" error={errores.precio} />
+              <FormInput label="Ciudad de entrega" value={vCiudad} onChangeText={setVCiudad} placeholder="Ej. Bogotá" autoCapitalize="words" error={errores.ciudad} />
+              <FormInput label="Ciudad de entrega opcional" value={vCiudadOpcional} onChangeText={setVCiudadOpcional} placeholder="Ej. Chía (otra ciudad de entrega)" autoCapitalize="words" />
               <FormInput label="Km permitido por día (opcional)" value={vKmDia} onChangeText={setVKmDia} placeholder="Vacío = libre" keyboardType="numeric" />
               <FormToggle label="Aire acondicionado" value={vAire} onValueChange={setVAire} />
               <FormInput label="Descripción (opcional)" value={vDescripcion} onChangeText={setVDescripcion} placeholder="Detalles adicionales…" multiline />
             </>
           ) : (
             <>
-              <FormSelect label="Tipo de propiedad" value={pTipo} options={TIPOS_PROPIEDAD as any} onChange={setPTipo} />
-              <FormInput label="Título" value={pTitulo} onChangeText={setPTitulo} placeholder="Ej. Finca con piscina en Melgar" autoCapitalize="sentences" />
-              <FormInput label="Departamento" value={pDepartamento} onChangeText={setPDepartamento} placeholder="Ej. Tolima" autoCapitalize="words" />
-              <FormInput label="Ciudad / Municipio" value={pCiudad} onChangeText={setPCiudad} placeholder="Ej. Melgar" autoCapitalize="words" />
-              <FormInput label="Precio por día (COP)" value={pPrecio} onChangeText={setPPrecio} placeholder="Ej. 380000" keyboardType="numeric" />
-              <FormInput label="Capacidad de huéspedes" value={pHuespedes} onChangeText={setPHuespedes} placeholder="Ej. 8" keyboardType="numeric" />
-              <FormInput label="Habitaciones" value={pHabitaciones} onChangeText={setPHabitaciones} placeholder="Ej. 3" keyboardType="numeric" />
-              <FormInput label="Camas" value={pCamas} onChangeText={setPCamas} placeholder="Ej. 4" keyboardType="numeric" />
-              <FormInput label="Baños" value={pBanos} onChangeText={setPBanos} placeholder="Ej. 2" keyboardType="numeric" />
+              <FormSelect label="Tipo de propiedad" value={pTipo} options={TIPOS_PROPIEDAD as any} onChange={setPTipo} error={errores.tipoPropiedad} />
+              <FormInput label="Título" value={pTitulo} onChangeText={setPTitulo} placeholder="Ej. Finca con piscina en Melgar" autoCapitalize="sentences" error={errores.titulo} />
+              <FormInput label="Departamento" value={pDepartamento} onChangeText={setPDepartamento} placeholder="Ej. Tolima" autoCapitalize="words" error={errores.departamento} />
+              <FormInput label="Ciudad / Municipio" value={pCiudad} onChangeText={setPCiudad} placeholder="Ej. Melgar" autoCapitalize="words" error={errores.ciudad} />
+              <FormInput label="Precio por día (COP)" value={pPrecio} onChangeText={setPPrecio} placeholder="Ej. 380000" keyboardType="numeric" error={errores.precio} />
+              <FormInput label="Capacidad de huéspedes" value={pHuespedes} onChangeText={setPHuespedes} placeholder="Ej. 8" keyboardType="numeric" error={errores.huespedes} />
+              <FormInput label="Habitaciones" value={pHabitaciones} onChangeText={setPHabitaciones} placeholder="Ej. 3" keyboardType="numeric" error={errores.habitaciones} />
+              <FormInput label="Camas" value={pCamas} onChangeText={setPCamas} placeholder="Ej. 4" keyboardType="numeric" error={errores.camas} />
+              <FormInput label="Baños" value={pBanos} onChangeText={setPBanos} placeholder="Ej. 2" keyboardType="numeric" error={errores.banos} />
               <View className="mb-2">
                 <Text className="text-[13px] text-ink font-quicksand-semibold mb-1">
                   Comodidades
@@ -283,6 +352,30 @@ export default function PublicarFormulario() {
               <FormInput label="Descripción (opcional)" value={pDescripcion} onChangeText={setPDescripcion} placeholder="Detalles adicionales…" multiline />
             </>
           )}
+
+          {/* Teléfono de contacto (WhatsApp) — ambos tipos */}
+          <View className="mb-4">
+            <Text className="text-[13px] text-ink font-quicksand-semibold mb-1.5">
+              Teléfono de contacto (WhatsApp)
+            </Text>
+            <View className="flex-row gap-2">
+              <CountryCodeSelect
+                value={indicativo}
+                onChange={setIndicativo}
+                error={errores.indicativo}
+              />
+              <View className="flex-1">
+                <FormInput
+                  label=""
+                  value={telefono}
+                  onChangeText={(v) => setTelefono(v.replace(/\D/g, ""))}
+                  placeholder="Número, ej. 3001234567"
+                  keyboardType="numeric"
+                  error={errores.telefono}
+                />
+              </View>
+            </View>
+          </View>
 
           {/* Fotos */}
           <View className="mt-2">

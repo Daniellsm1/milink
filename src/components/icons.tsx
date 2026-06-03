@@ -135,6 +135,12 @@ export const ChevronLeft = (p: IconProps) => (
   </Stroke>
 );
 
+export const ChevronDown = (p: IconProps) => (
+  <Stroke {...p}>
+    <Polyline points="6 9 12 15 18 9" />
+  </Stroke>
+);
+
 export const Mail = (p: IconProps) => (
   <Stroke {...p}>
     <Rect x="2" y="4" width="20" height="16" rx="2" />

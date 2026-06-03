@@ -115,8 +115,14 @@ export function VehicleCard({ vehicle, onPress, onReservar }: Props) {
         </View>
         <View className="flex-row items-center gap-1 mt-0.5">
           <MapPin size={10} color={COLORS.muted} />
-          <Text className="text-[10.5px] font-quicksand-medium text-muted">
+          <Text
+            className="text-[10.5px] font-quicksand-medium text-muted flex-1"
+            numberOfLines={1}
+          >
             {vehicle.loc}
+            {vehicle.locOpcional ? (
+              <Text className="text-muted"> · {vehicle.locOpcional}</Text>
+            ) : null}
           </Text>
         </View>
       </View>
