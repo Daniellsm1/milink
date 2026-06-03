@@ -58,6 +58,10 @@ export default function RootLayout() {
               name="admin/index"
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="categoria/[key]"
+              options={{ headerShown: false }}
+            />
           </Stack>
         </SafeAreaProvider>
       </SessionProvider>

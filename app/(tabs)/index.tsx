@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,11 +9,15 @@ import { SectionHeader } from "../../src/components/SectionHeader";
 import { NewArrivalsCarousel } from "../../src/components/NewArrivalsCarousel";
 import { CategoryPill } from "../../src/components/CategoryPill";
 import { VehicleCard } from "../../src/components/VehicleCard";
+import { FiltrosSheet } from "../../src/components/FiltrosSheet";
 import { Heart, Share2, User } from "../../src/components/icons";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
 import { CATEGORIAS, DISPONIBLES, NUEVAS } from "../../src/data/mock";
-import { listarVehiculosAprobados } from "../../src/services/feed";
+import {
+  listarVehiculosAprobados,
+  type FiltrosVehiculo,
+} from "../../src/services/feed";
 
 function HeaderIconButton({
   label,
@@ -41,18 +45,29 @@ export default function Explorar() {
   const router = useRouter();
   const tabBarH = useTabBarHeight();
 
-  // Feed real: vehículos aprobados de Supabase. Si falla o está vacío,
+  const [filtros, setFiltros] = useState<FiltrosVehiculo>({});
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  // Feed real: vehículos aprobados de Supabase con filtros. Si está vacío,
   // caen los mocks para que la pantalla nunca se vea vacía durante el desarrollo.
   const aprobadosQuery = useQuery({
-    queryKey: ["vehiculos-aprobados"],
-    queryFn: () => listarVehiculosAprobados(20),
+    queryKey: ["vehiculos-aprobados-explorar", filtros],
+    queryFn: () => listarVehiculosAprobados(filtros, 20),
     staleTime: 30_000,
   });
 
+  const filtrosActivos = useMemo(
+    () =>
+      Object.values(filtros).filter((v) => v != null && v !== "").length,
+    [filtros]
+  );
+
   const disponibles = useMemo(() => {
     const reales = aprobadosQuery.data ?? [];
+    // Si hay filtros activos solo mostramos resultados reales (no mocks)
+    if (filtrosActivos > 0) return reales;
     return reales.length > 0 ? [...reales, ...DISPONIBLES] : DISPONIBLES;
-  }, [aprobadosQuery.data]);
+  }, [aprobadosQuery.data, filtrosActivos]);
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-bg">
@@ -121,15 +136,34 @@ export default function Explorar() {
                 contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}
               >
                 {CATEGORIAS.map((cat) => (
-                  <CategoryPill key={cat.key} category={cat} />
+                  <CategoryPill
+                    key={cat.key}
+                    category={cat}
+                    onPress={() => router.push(`/categoria/${cat.key}`)}
+                  />
                 ))}
               </ScrollView>
             </View>
 
             {/* Disponibles (encabezado; la grilla es el FlatList) */}
-            <SectionHeader title="Disponibles para ti" action="Filtrar" />
+            <SectionHeader
+              title="Disponibles para ti"
+              action={
+                filtrosActivos > 0 ? `Filtrar (${filtrosActivos})` : "Filtrar"
+              }
+              onAction={() => setSheetOpen(true)}
+            />
           </View>
         }
+      />
+
+      {/* Sheet de filtros para "Disponibles para ti" */}
+      <FiltrosSheet
+        visible={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        mode="vehiculo"
+        value={filtros}
+        onApply={setFiltros}
       />
     </SafeAreaView>
   );
