@@ -9,13 +9,17 @@ import { SectionHeader } from "../../src/components/SectionHeader";
 import { NewArrivalsCarousel } from "../../src/components/NewArrivalsCarousel";
 import { CategoryPill } from "../../src/components/CategoryPill";
 import { VehicleCard } from "../../src/components/VehicleCard";
+import { PropiedadCard } from "../../src/components/PropiedadCard";
 import { FiltrosSheet } from "../../src/components/FiltrosSheet";
 import { Heart, Share2, User } from "../../src/components/icons";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
 import { CATEGORIAS, DISPONIBLES, NUEVAS } from "../../src/data/mock";
 import {
+  listarMixtoAprobado,
+  listarNuevasEntradas,
   listarVehiculosAprobados,
+  type DisponibleMixto,
   type FiltrosVehiculo,
 } from "../../src/services/feed";
 
@@ -48,43 +52,75 @@ export default function Explorar() {
   const [filtros, setFiltros] = useState<FiltrosVehiculo>({});
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  // Feed real: vehículos aprobados de Supabase con filtros. Si está vacío,
-  // caen los mocks para que la pantalla nunca se vea vacía durante el desarrollo.
-  const aprobadosQuery = useQuery({
-    queryKey: ["vehiculos-aprobados-explorar", filtros],
-    queryFn: () => listarVehiculosAprobados(filtros, 20),
-    staleTime: 30_000,
-  });
-
   const filtrosActivos = useMemo(
     () =>
       Object.values(filtros).filter((v) => v != null && v !== "").length,
     [filtros]
   );
 
-  const disponibles = useMemo(() => {
-    const reales = aprobadosQuery.data ?? [];
-    // Si hay filtros activos solo mostramos resultados reales (no mocks)
-    if (filtrosActivos > 0) return reales;
-    return reales.length > 0 ? [...reales, ...DISPONIBLES] : DISPONIBLES;
-  }, [aprobadosQuery.data, filtrosActivos]);
+  // Carrusel "Nuevas entradas": últimas 5 publicaciones aprobadas (veh + prop).
+  const nuevasQuery = useQuery({
+    queryKey: ["nuevas-entradas"],
+    queryFn: () => listarNuevasEntradas(5),
+    staleTime: 30_000,
+  });
+  const nuevasReales = nuevasQuery.data ?? [];
+  // Si no hay datos reales, caen los mocks (NUEVAS) como fallback.
+  const nuevas = nuevasReales.length > 0 ? nuevasReales : NUEVAS;
+
+  // "Disponibles para ti": sin filtros → mixto veh+prop reales;
+  // con filtros → solo vehículos filtrados.
+  const mixtoQuery = useQuery({
+    queryKey: ["mixto-aprobado"],
+    queryFn: () => listarMixtoAprobado(40),
+    staleTime: 30_000,
+    enabled: filtrosActivos === 0,
+  });
+  const filtradosQuery = useQuery({
+    queryKey: ["vehiculos-filtrados", filtros],
+    queryFn: () => listarVehiculosAprobados(filtros, 40),
+    staleTime: 30_000,
+    enabled: filtrosActivos > 0,
+  });
+
+  // Lista final de cards mixtas. Si no hay filtros y la consulta mixta está
+  // vacía, caemos a los mocks (vehículos) para que la pantalla no quede vacía.
+  const disponibles: DisponibleMixto[] = useMemo(() => {
+    if (filtrosActivos > 0) {
+      return (filtradosQuery.data ?? []).map((v) => ({
+        kind: "vehiculo",
+        data: v,
+      }));
+    }
+    const mixto = mixtoQuery.data ?? [];
+    if (mixto.length > 0) return mixto;
+    return DISPONIBLES.map((v) => ({ kind: "vehiculo", data: v }));
+  }, [filtrosActivos, filtradosQuery.data, mixtoQuery.data]);
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-bg">
       <FlatList
         data={disponibles}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => `${item.kind}-${item.data.id}`}
         numColumns={2}
         columnWrapperStyle={{ gap: 12, paddingHorizontal: 20 }}
         contentContainerStyle={{ gap: 12, paddingBottom: tabBarH + 16 }}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <VehicleCard
-            vehicle={item}
-            onPress={() => router.push(`/vehicle/${item.id}`)}
-            onReservar={() => router.push("/auth/register")}
-          />
-        )}
+        renderItem={({ item }) =>
+          item.kind === "vehiculo" ? (
+            <VehicleCard
+              vehicle={item.data}
+              onPress={() => router.push(`/vehicle/${item.data.id}`)}
+              onReservar={() => router.push("/auth/register")}
+            />
+          ) : (
+            <PropiedadCard
+              propiedad={item.data}
+              onPress={() => router.push(`/vehicle/${item.data.id}`)}
+              onReservar={() => router.push("/auth/register")}
+            />
+          )
+        }
         ListHeaderComponent={
           <View>
             {/* Hero */}
@@ -122,7 +158,7 @@ export default function Explorar() {
             <View className="pt-2 pb-5">
               <SectionHeader title="Nuevas entradas" />
               <NewArrivalsCarousel
-                data={NUEVAS}
+                data={nuevas}
                 onPressItem={(item) => router.push(`/vehicle/${item.id}`)}
               />
             </View>

@@ -1,7 +1,7 @@
 // Servicio del feed público: vehículos y propiedades aprobados desde Supabase.
 // Soporta filtros opcionales (precio, marca, ciudad, combustible, categoría, tipo).
 import { supabase } from "../lib/supabase";
-import type { Disponible } from "../data/mock";
+import type { Disponible, NuevaEntrada } from "../data/mock";
 import type {
   CombustibleTipo,
   PropiedadTipo,
@@ -130,4 +130,104 @@ export async function listarPropiedadesAprobadas(
       tipo: row.tipo_propiedad,
     })
   );
+}
+
+// ── Mixto: vehículos + propiedades aprobados ─────────────────────────
+export type DisponibleMixto =
+  | { kind: "vehiculo"; data: Disponible }
+  | { kind: "propiedad"; data: PropiedadListado };
+
+/** Listado completo para "Disponibles para ti": veh + prop aprobados,
+ *  intercalados por fecha de creación más reciente. */
+export async function listarMixtoAprobado(
+  limit = 40
+): Promise<DisponibleMixto[]> {
+  const [vehs, props] = await Promise.all([
+    listarVehiculosAprobados({}, limit),
+    listarPropiedadesAprobadas({}, limit),
+  ]);
+
+  // Mapeamos sin perder created_at; como no lo expusimos, los servicios ya
+  // ordenan por created_at desc cada uno. Para mezclar, hacemos zip simple
+  // alternando los más recientes de cada lista en orden de inserción.
+  // (Más adelante podemos cambiarlo a un ORDER global si hace falta.)
+  const mezclados: DisponibleMixto[] = [];
+  const max = Math.max(vehs.length, props.length);
+  for (let i = 0; i < max; i++) {
+    if (vehs[i]) mezclados.push({ kind: "vehiculo", data: vehs[i] });
+    if (props[i]) mezclados.push({ kind: "propiedad", data: props[i] });
+  }
+  return mezclados.slice(0, limit);
+}
+
+// ── Carrusel "Nuevas entradas": últimas N publicaciones aprobadas ────
+/** Trae las N publicaciones aprobadas más recientes (veh + prop),
+ *  mapeadas al tipo `NuevaEntrada` que consume el carrusel. */
+export async function listarNuevasEntradas(limit = 5): Promise<NuevaEntrada[]> {
+  // Pedimos un poco más de cada lado y luego mezclamos para acertar mejor el "más reciente".
+  const fetchN = Math.max(limit, 5);
+  const [vRes, pRes] = await Promise.all([
+    supabase
+      .from("vehiculos")
+      .select(
+        "id, marca, modelo, ciudad_entrega_principal, precio_alquiler_diario, imagenes, categoria, tipo_combustible, created_at"
+      )
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(fetchN),
+    supabase
+      .from("propiedades")
+      .select(
+        "id, titulo, ciudad_municipio, precio_alquiler_diario, imagenes, tipo_propiedad, created_at"
+      )
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(fetchN),
+  ]);
+
+  if (vRes.error) throw new Error(vRes.error.message);
+  if (pRes.error) throw new Error(pRes.error.message);
+
+  const vehs: (NuevaEntrada & { _ts: string })[] = (vRes.data ?? []).map(
+    (row) => {
+      // Tag: combustible si es eléctrico/híbrido, si no la categoría.
+      const tag =
+        row.tipo_combustible === "electrico"
+          ? "ELÉCTRICO"
+          : row.tipo_combustible === "hibrido"
+          ? "HÍBRIDO"
+          : row.categoria === "camioneta"
+          ? "CAMIONETA"
+          : row.categoria === "motocicleta"
+          ? "MOTO"
+          : "VEHÍCULO";
+      return {
+        id: row.id,
+        name: `${row.marca} ${row.modelo}`,
+        loc: row.ciudad_entrega_principal,
+        price: row.precio_alquiler_diario.toLocaleString("es-CO"),
+        img: row.imagenes?.[0] ?? "",
+        tag,
+        _ts: row.created_at,
+      };
+    }
+  );
+
+  const props: (NuevaEntrada & { _ts: string })[] = (pRes.data ?? []).map(
+    (row) => ({
+      id: row.id,
+      name: row.titulo,
+      loc: row.ciudad_municipio,
+      price: row.precio_alquiler_diario.toLocaleString("es-CO"),
+      img: row.imagenes?.[0] ?? "",
+      tag: row.tipo_propiedad.toUpperCase(),
+      _ts: row.created_at,
+    })
+  );
+
+  // Mezcla global por timestamp (más reciente primero) y corta a `limit`.
+  return [...vehs, ...props]
+    .sort((a, b) => b._ts.localeCompare(a._ts))
+    .slice(0, limit)
+    .map(({ _ts: _, ...rest }) => rest);
 }

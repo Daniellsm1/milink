@@ -124,7 +124,13 @@ export async function fetchDetalleById(id: string): Promise<DetailItem | null> {
     .eq("status", "approved")
     .maybeSingle();
 
-  if (error || !data) return null;
+  // Si no es vehículo, intentamos como propiedad
+  if (!data) {
+    const prop = await fetchPropiedad(id);
+    return prop;
+  }
+
+  if (error) return null;
 
   const fuel =
     data.tipo_combustible === "electrico"
@@ -164,6 +170,42 @@ export async function fetchDetalleById(id: string): Promise<DetailItem | null> {
     ],
     descripcion:
       data.descripcion ?? descripcionVehiculo(data.marca, data.modelo),
+    propietario: {
+      ...PROPIETARIO_DEMO,
+      telefono: data.telefono_contacto ?? PROPIETARIO_DEMO.telefono,
+    },
+  };
+}
+
+/** Lookup en `propiedades` (cuando el id no es un vehículo). */
+async function fetchPropiedad(id: string): Promise<DetailItem | null> {
+  const { data, error } = await supabase
+    .from("propiedades")
+    .select(
+      "id, tipo_propiedad, titulo, descripcion, ciudad_municipio, departamento, precio_alquiler_diario, capacidad_huespedes, numero_habitaciones, numero_camas, numero_banos, imagenes, telefono_contacto"
+    )
+    .eq("id", id)
+    .eq("status", "approved")
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    titulo: data.titulo,
+    ubicacion: `${data.ciudad_municipio}, ${data.departamento}`,
+    precioDia: data.precio_alquiler_diario.toLocaleString("es-CO"),
+    imagenes: data.imagenes ?? [],
+    caracteristicas: [
+      { icono: "ubicacion", etiqueta: data.ciudad_municipio },
+      { icono: "asientos", etiqueta: `${data.capacidad_huespedes} huéspedes` },
+      { icono: "ano", etiqueta: `${data.numero_habitaciones} hab.` },
+      { icono: "kilometraje", etiqueta: `${data.numero_camas} camas` },
+      { icono: "combustible", etiqueta: `${data.numero_banos} baños` },
+    ],
+    descripcion:
+      data.descripcion ??
+      `${data.titulo} en ${data.ciudad_municipio}, ${data.departamento}. Espacio ideal para tu estadía.`,
     propietario: {
       ...PROPIETARIO_DEMO,
       telefono: data.telefono_contacto ?? PROPIETARIO_DEMO.telefono,
