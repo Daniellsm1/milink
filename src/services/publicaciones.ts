@@ -49,12 +49,18 @@ export type PropiedadFormData = {
   descripcion: string | null;
 };
 
-async function getUsuarioId(): Promise<string> {
+/** Devuelve id + nombre derivado del user_metadata o el email del usuario actual. */
+async function getUsuarioActual(): Promise<{ id: string; nombre: string }> {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
     throw new Error("Debes iniciar sesión para publicar.");
   }
-  return data.user.id;
+  const meta = data.user.user_metadata as { nombre?: string } | undefined;
+  const nombre =
+    meta?.nombre?.trim() ||
+    data.user.email?.split("@")[0] ||
+    "Propietario";
+  return { id: data.user.id, nombre };
 }
 
 export async function crearVehiculo(
@@ -64,12 +70,13 @@ export async function crearVehiculo(
   if (uris.length !== 3) {
     throw new Error("Debes adjuntar exactamente 3 fotografías.");
   }
-  const usuarioId = await getUsuarioId();
+  const { id: usuarioId, nombre } = await getUsuarioActual();
   const imagenes = await subirImagenes(usuarioId, "vehiculos", uris);
 
   const { error } = await supabase.from("vehiculos").insert({
     usuario_id: usuarioId,
     ...form,
+    nombre_propietario: nombre,
     imagenes,
     disponible: true,
     status: "pending_approval",
@@ -85,12 +92,13 @@ export async function crearPropiedad(
   if (uris.length !== 3) {
     throw new Error("Debes adjuntar exactamente 3 fotografías.");
   }
-  const usuarioId = await getUsuarioId();
+  const { id: usuarioId, nombre } = await getUsuarioActual();
   const imagenes = await subirImagenes(usuarioId, "propiedades", uris);
 
   const { error } = await supabase.from("propiedades").insert({
     usuario_id: usuarioId,
     ...form,
+    nombre_propietario: nombre,
     imagenes,
     disponible: true,
     status: "pending_approval",

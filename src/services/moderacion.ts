@@ -12,6 +12,7 @@ export type PendienteItem = {
   tipo: PendienteTipo;
   id: string;
   usuario_id: string;
+  nombre_propietario: string | null;
   titulo: string;
   ciudad: string;
   precio: number;
@@ -26,14 +27,14 @@ export async function listarPendientes(): Promise<PendienteItem[]> {
     supabase
       .from("vehiculos")
       .select(
-        "id, usuario_id, marca, modelo, ciudad_entrega_principal, precio_alquiler_diario, imagenes, status, created_at"
+        "id, usuario_id, nombre_propietario, marca, modelo, ciudad_entrega_principal, precio_alquiler_diario, imagenes, status, created_at"
       )
       .eq("status", "pending_approval")
       .order("created_at", { ascending: false }),
     supabase
       .from("propiedades")
       .select(
-        "id, usuario_id, titulo, ciudad_municipio, precio_alquiler_diario, imagenes, status, created_at"
+        "id, usuario_id, nombre_propietario, titulo, ciudad_municipio, precio_alquiler_diario, imagenes, status, created_at"
       )
       .eq("status", "pending_approval")
       .order("created_at", { ascending: false }),
@@ -46,6 +47,7 @@ export async function listarPendientes(): Promise<PendienteItem[]> {
     tipo: "vehiculo",
     id: row.id,
     usuario_id: row.usuario_id,
+    nombre_propietario: row.nombre_propietario,
     titulo: `${row.marca} ${row.modelo}`,
     ciudad: row.ciudad_entrega_principal,
     precio: row.precio_alquiler_diario,
@@ -58,6 +60,7 @@ export async function listarPendientes(): Promise<PendienteItem[]> {
     tipo: "propiedad",
     id: row.id,
     usuario_id: row.usuario_id,
+    nombre_propietario: row.nombre_propietario,
     titulo: row.titulo,
     ciudad: row.ciudad_municipio,
     precio: row.precio_alquiler_diario,

@@ -162,6 +162,12 @@ export default function AdminPanel() {
                 >
                   {item.titulo}
                 </Text>
+                <Text
+                  className="text-[11.5px] text-muted font-quicksand-medium mt-0.5"
+                  numberOfLines={1}
+                >
+                  Por {item.nombre_propietario ?? "Propietario"}
+                </Text>
                 <View className="flex-row items-center gap-1 mt-1">
                   <MapPin size={12} color={COLORS.muted} />
                   <Text className="text-[12px] text-muted font-quicksand-medium">

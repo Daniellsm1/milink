@@ -118,7 +118,7 @@ export async function fetchDetalleById(id: string): Promise<DetailItem | null> {
   const { data, error } = await supabase
     .from("vehiculos")
     .select(
-      "id, marca, modelo, ano, ciudad_entrega_principal, ciudad_entrega_opcional, precio_alquiler_diario, tipo_combustible, transmision, numero_sillas, kilometraje_permitido_diario, descripcion, imagenes, telefono_contacto"
+      "id, marca, modelo, ano, ciudad_entrega_principal, ciudad_entrega_opcional, precio_alquiler_diario, tipo_combustible, transmision, numero_sillas, kilometraje_permitido_diario, descripcion, imagenes, telefono_contacto, nombre_propietario"
     )
     .eq("id", id)
     .eq("status", "approved")
@@ -172,6 +172,7 @@ export async function fetchDetalleById(id: string): Promise<DetailItem | null> {
       data.descripcion ?? descripcionVehiculo(data.marca, data.modelo),
     propietario: {
       ...PROPIETARIO_DEMO,
+      nombre: data.nombre_propietario ?? PROPIETARIO_DEMO.nombre,
       telefono: data.telefono_contacto ?? PROPIETARIO_DEMO.telefono,
     },
   };
@@ -182,7 +183,7 @@ async function fetchPropiedad(id: string): Promise<DetailItem | null> {
   const { data, error } = await supabase
     .from("propiedades")
     .select(
-      "id, tipo_propiedad, titulo, descripcion, ciudad_municipio, departamento, precio_alquiler_diario, capacidad_huespedes, numero_habitaciones, numero_camas, numero_banos, imagenes, telefono_contacto"
+      "id, tipo_propiedad, titulo, descripcion, ciudad_municipio, departamento, precio_alquiler_diario, capacidad_huespedes, numero_habitaciones, numero_camas, numero_banos, imagenes, telefono_contacto, nombre_propietario"
     )
     .eq("id", id)
     .eq("status", "approved")
@@ -208,6 +209,7 @@ async function fetchPropiedad(id: string): Promise<DetailItem | null> {
       `${data.titulo} en ${data.ciudad_municipio}, ${data.departamento}. Espacio ideal para tu estadía.`,
     propietario: {
       ...PROPIETARIO_DEMO,
+      nombre: data.nombre_propietario ?? PROPIETARIO_DEMO.nombre,
       telefono: data.telefono_contacto ?? PROPIETARIO_DEMO.telefono,
     },
   };
