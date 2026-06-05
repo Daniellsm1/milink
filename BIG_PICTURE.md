@@ -1,6 +1,6 @@
 # MiLink App — Big Picture
 
-> Plataforma móvil para alquiler de vehículos entre miembros de las Fuerzas Militares de Colombia.
+> Plataforma móvil para alquiler de vehículos y propiedades entre miembros de las Fuerzas Militares.
 
 ---
 
