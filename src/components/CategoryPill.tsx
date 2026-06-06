@@ -1,16 +1,31 @@
 import { Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
-import { CATEGORY_ICONS } from "./icons";
 import { COLORS } from "../theme/colors";
-import type { Categoria } from "../data/mock";
+import type { Categoria, CategoriaKey } from "../data/mock";
 
 type Props = {
   category: Categoria;
   onPress?: () => void;
 };
 
+const CATEGORY_IMAGES: Record<CategoriaKey, number> = {
+  camionetas: require("../../assets/camionetas.webp"),
+  carros: require("../../assets/carros.webp"),
+  motos: require("../../assets/motos.webp"),
+  apartamentos: require("../../assets/apartamentos.webp"),
+  casas: require("../../assets/casas.webp"),
+  fincas: require("../../assets/fincas.webp"),
+};
+
+const BASE_IMAGE_SIZE = 44;
+// camionetas y carros se ven un poco más pequeñas que el resto
+// (mucho aire interno en el WebP) → escalamos +10%.
+const CATEGORY_IMAGE_SIZE: Partial<Record<CategoriaKey, number>> = {
+  camionetas: BASE_IMAGE_SIZE * 1.1,
+  carros: BASE_IMAGE_SIZE * 1.1,
+};
+
 export function CategoryPill({ category, onPress }: Props) {
-  const Icon = CATEGORY_ICONS[category.key];
   return (
     <Pressable
       onPress={onPress}
@@ -32,15 +47,14 @@ export function CategoryPill({ category, onPress }: Props) {
           elevation: 4,
         }}
       >
-        {category.key === "camionetas" ? (
-          <Image
-            source={require("../../assets/camionetas.webp")}
-            style={{ width: 44, height: 44 }}
-            contentFit="contain"
-          />
-        ) : (
-          <Icon size={32} color={COLORS.accent} />
-        )}
+        <Image
+          source={CATEGORY_IMAGES[category.key]}
+          style={{
+            width: CATEGORY_IMAGE_SIZE[category.key] ?? BASE_IMAGE_SIZE,
+            height: CATEGORY_IMAGE_SIZE[category.key] ?? BASE_IMAGE_SIZE,
+          }}
+          contentFit="contain"
+        />
       </View>
       <Text className="text-[10.5px] font-quicksand-semibold text-center text-ink">
         {category.label}
