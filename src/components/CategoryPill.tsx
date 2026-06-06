@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from "react-native";
+import { Image } from "expo-image";
 import { CATEGORY_ICONS } from "./icons";
 import { COLORS } from "../theme/colors";
 import type { Categoria } from "../data/mock";
@@ -31,7 +32,15 @@ export function CategoryPill({ category, onPress }: Props) {
           elevation: 4,
         }}
       >
-        <Icon size={32} color={COLORS.accent} />
+        {category.key === "camionetas" ? (
+          <Image
+            source={require("../../assets/camionetas.webp")}
+            style={{ width: 44, height: 44 }}
+            contentFit="contain"
+          />
+        ) : (
+          <Icon size={32} color={COLORS.accent} />
+        )}
       </View>
       <Text className="text-[10.5px] font-quicksand-semibold text-center text-ink">
         {category.label}
