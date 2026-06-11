@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { SearchBar } from "../../src/components/SearchBar";
 import { SectionHeader } from "../../src/components/SectionHeader";
 import { NewArrivalsCarousel } from "../../src/components/NewArrivalsCarousel";
+import { BeneficiosCarousel } from "../../src/components/BeneficiosCarousel";
 import { CategoryPill } from "../../src/components/CategoryPill";
 import { VehicleCard } from "../../src/components/VehicleCard";
 import { PropiedadCard } from "../../src/components/PropiedadCard";
@@ -137,7 +138,10 @@ export default function Explorar() {
                   </Text>
                 </View>
                 <View className="flex-row items-center gap-2">
-                  <HeaderIconButton label="Favoritos">
+                  <HeaderIconButton
+                    label="Favoritos"
+                    onPress={() => router.push("/(tabs)/favorites")}
+                  >
                     <Heart size={17} color={COLORS.text} />
                   </HeaderIconButton>
                   <HeaderIconButton label="Compartir">
@@ -189,6 +193,12 @@ export default function Explorar() {
               }
               onAction={() => setSheetOpen(true)}
             />
+          </View>
+        }
+        ListFooterComponent={
+          <View className="pt-6 pb-2">
+            <SectionHeader title="¿Por qué MiLink?" hideAction />
+            <BeneficiosCarousel />
           </View>
         }
       />

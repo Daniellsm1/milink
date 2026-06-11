@@ -70,6 +70,45 @@ export async function listarVehiculosAprobados(
   });
 }
 
+/** Trae vehículos aprobados por una lista de IDs (para la pantalla Favoritos). */
+export async function listarVehiculosPorIds(
+  ids: string[]
+): Promise<Disponible[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from("vehiculos")
+    .select(
+      "id, marca, modelo, precio_alquiler_diario, ciudad_entrega_principal, ciudad_entrega_opcional, tipo_combustible, numero_sillas, transmision, imagenes"
+    )
+    .eq("status", "approved")
+    .in("id", ids);
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map((row): Disponible => {
+    const fuel: Disponible["fuel"] =
+      row.tipo_combustible === "electrico"
+        ? "Eléctrico"
+        : row.tipo_combustible === "hibrido"
+        ? "Híbrido"
+        : "Gasolina";
+    const trans: Disponible["trans"] =
+      row.transmision === "automatico" ? "Automático" : "Manual";
+
+    return {
+      id: row.id,
+      brand: row.marca,
+      model: row.modelo,
+      price: row.precio_alquiler_diario.toLocaleString("es-CO"),
+      loc: row.ciudad_entrega_principal,
+      locOpcional: row.ciudad_entrega_opcional ?? undefined,
+      fuel,
+      seats: String(row.numero_sillas ?? 5),
+      trans,
+      img: row.imagenes?.[0] ?? "",
+    };
+  });
+}
+
 // ── Filtros de propiedades ───────────────────────────────────────────
 export type FiltrosPropiedad = {
   tipoPropiedad?: PropiedadTipo;
@@ -115,6 +154,35 @@ export async function listarPropiedadesAprobadas(
   const { data, error } = await q
     .order("created_at", { ascending: false })
     .limit(limit);
+  if (error) throw new Error(error.message);
+
+  return (data ?? []).map(
+    (row): PropiedadListado => ({
+      id: row.id,
+      titulo: row.titulo,
+      ciudad: row.ciudad_municipio,
+      departamento: row.departamento,
+      precio: row.precio_alquiler_diario.toLocaleString("es-CO"),
+      capacidad: row.capacidad_huespedes,
+      habitaciones: row.numero_habitaciones,
+      imagen: row.imagenes?.[0] ?? "",
+      tipo: row.tipo_propiedad,
+    })
+  );
+}
+
+/** Trae propiedades aprobadas por una lista de IDs (para la pantalla Favoritos). */
+export async function listarPropiedadesPorIds(
+  ids: string[]
+): Promise<PropiedadListado[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from("propiedades")
+    .select(
+      "id, titulo, ciudad_municipio, departamento, precio_alquiler_diario, capacidad_huespedes, numero_habitaciones, imagenes, tipo_propiedad"
+    )
+    .eq("status", "approved")
+    .in("id", ids);
   if (error) throw new Error(error.message);
 
   return (data ?? []).map(

@@ -383,3 +383,68 @@ export const CATEGORY_ICONS = {
   casas: Home,
   fincas: Trees,
 } as const;
+
+// ─── Iconos de la sección "¿Por qué MiLink?" ───────────────────────
+
+// Insignia con signo de dólar — mejores precios
+export const BadgeDolar = (p: IconProps) => (
+  <Filled {...p}>
+    <Circle cx="12" cy="12" r="10" />
+    <Path
+      d="M12.7 6.6v1.1c1.5.16 2.6.95 2.85 2.18.06.32-.18.62-.5.62h-.8c-.26 0-.46-.18-.55-.42-.18-.5-.7-.86-1.55-.86-1.02 0-1.55.45-1.55 1.05 0 .55.36.86 1.55 1.15l1.05.26c1.95.45 2.85 1.32 2.85 2.65 0 1.45-1.15 2.45-2.85 2.65v1.1c0 .3-.25.55-.55.55h-.7a.55.55 0 0 1-.55-.55v-1.1c-1.6-.18-2.75-1-3-2.3-.06-.32.18-.6.5-.6h.8c.26 0 .46.16.55.4.18.55.75.95 1.7.95 1.05 0 1.65-.45 1.65-1.1 0-.55-.36-.86-1.45-1.13l-1.15-.28c-1.85-.45-2.85-1.3-2.85-2.65 0-1.35 1.1-2.32 2.7-2.55V6.6c0-.3.25-.55.55-.55h.7c.3 0 .55.25.55.55Z"
+      fill={DARK}
+      opacity={0.92}
+    />
+  </Filled>
+);
+
+// Escudo con check — sin cargos ocultos / seguridad
+export const ShieldCheck = (p: IconProps) => (
+  <Filled {...p}>
+    <Path d="M12 2.2 4 5v6.2c0 4.3 3.1 8.3 8 10.6 4.9-2.3 8-6.3 8-10.6V5l-8-2.8Z" />
+    <Path
+      d="m9 12 2.2 2.2L15.2 10"
+      stroke={DARK}
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+      opacity={0.92}
+    />
+  </Filled>
+);
+
+// Portapapeles con líneas — información clara
+export const ClipboardList = (p: IconProps) => (
+  <Stroke {...p}>
+    <Rect x="5" y="4" width="14" height="17" rx="2" />
+    <Rect x="9" y="2.5" width="6" height="3.5" rx="1" />
+    <Line x1="8.5" y1="11" x2="15.5" y2="11" />
+    <Line x1="8.5" y1="14.5" x2="15.5" y2="14.5" />
+    <Line x1="8.5" y1="18" x2="13" y2="18" />
+  </Stroke>
+);
+
+// Bocadillo redondo — contacto directo
+export const MessageCircle = (p: IconProps) => (
+  <Stroke {...p}>
+    <Path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z" />
+  </Stroke>
+);
+
+// Móvil con detalle de pantalla — 100% en línea
+export const Smartphone = (p: IconProps) => (
+  <Filled {...p}>
+    <Rect x="6" y="2.3" width="12" height="19.4" rx="2.6" />
+    <Rect
+      x="7.6"
+      y="4.6"
+      width="8.8"
+      height="13"
+      rx="0.8"
+      fill={DARK}
+      opacity={0.18}
+    />
+    <Circle cx="12" cy="19.4" r="0.95" fill={DARK} opacity={0.55} />
+  </Filled>
+);

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
 import { SessionProvider } from "../src/lib/auth";
+import { FavoritosProvider } from "../src/lib/favoritos";
 import {
   useFonts,
   Quicksand_400Regular,
@@ -38,8 +39,9 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
-        <SafeAreaProvider>
-          <Stack>
+        <FavoritosProvider>
+          <SafeAreaProvider>
+            <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen
               name="vehicle/[id]"
@@ -62,8 +64,9 @@ export default function RootLayout() {
               name="categoria/[key]"
               options={{ headerShown: false }}
             />
-          </Stack>
-        </SafeAreaProvider>
+            </Stack>
+          </SafeAreaProvider>
+        </FavoritosProvider>
       </SessionProvider>
     </QueryClientProvider>
   );

@@ -1,9 +1,12 @@
-import { Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { BlurView } from "expo-blur";
-import { Heart, MapPin, Settings, Users, WhatsApp } from "./icons";
+import { useRouter } from "expo-router";
+import { Heart, HeartFilled, MapPin, Settings, Users, WhatsApp } from "./icons";
 import { COLORS } from "../theme/colors";
 import type { PropiedadListado } from "../services/feed";
+import { useSession } from "../lib/auth";
+import { useFavoritos } from "../lib/favoritos";
 
 type Props = {
   propiedad: PropiedadListado;
@@ -31,6 +34,26 @@ const TIPO_LABEL: Record<PropiedadListado["tipo"], string> = {
 };
 
 export function PropiedadCard({ propiedad, onPress, onReservar }: Props) {
+  const router = useRouter();
+  const { user } = useSession();
+  const { esFavorito, toggleFavorito } = useFavoritos();
+  const favorito = esFavorito(propiedad.id);
+
+  const onPressFavorito = () => {
+    if (!user) {
+      Alert.alert(
+        "Inicia sesión",
+        "Necesitas una cuenta para guardar favoritos",
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Iniciar sesión", onPress: () => router.push("/auth/login") },
+        ]
+      );
+      return;
+    }
+    void toggleFavorito(propiedad.id, "propiedad");
+  };
+
   return (
     <View
       className="flex-1 rounded-2xl overflow-hidden bg-white border border-line"
@@ -61,12 +84,6 @@ export function PropiedadCard({ propiedad, onPress, onReservar }: Props) {
               transition={200}
             />
           ) : null}
-          <View
-            className="absolute top-2 right-2 w-7 h-7 rounded-full items-center justify-center"
-            style={{ backgroundColor: "rgba(255,255,255,0.85)" }}
-          >
-            <Heart size={13} color={COLORS.text} />
-          </View>
           <View className="absolute bottom-2 left-2 right-2 flex-row gap-1">
             <Pill>
               <Users size={11} color={COLORS.text} />
@@ -121,6 +138,22 @@ export function PropiedadCard({ propiedad, onPress, onReservar }: Props) {
             </Text>
           </View>
         </View>
+      </Pressable>
+
+      {/* Botón de favorito — sibling del Pressable principal para evitar anidar buttons */}
+      <Pressable
+        onPress={onPressFavorito}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={favorito ? "Quitar de favoritos" : "Agregar a favoritos"}
+        className="absolute top-2 right-2 w-7 h-7 rounded-full items-center justify-center"
+        style={{ backgroundColor: "rgba(255,255,255,0.85)" }}
+      >
+        {favorito ? (
+          <HeartFilled size={13} color={COLORS.accent} />
+        ) : (
+          <Heart size={13} color={COLORS.text} />
+        )}
       </Pressable>
 
       {/* Botón Reservar */}
