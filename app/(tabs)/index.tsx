@@ -12,7 +12,8 @@ import { CategoryPill } from "../../src/components/CategoryPill";
 import { VehicleCard } from "../../src/components/VehicleCard";
 import { PropiedadCard } from "../../src/components/PropiedadCard";
 import { FiltrosSheet } from "../../src/components/FiltrosSheet";
-import { Heart, Share2, User } from "../../src/components/icons";
+import { Heart, Menu } from "../../src/components/icons";
+import { DrawerMenu } from "../../src/components/DrawerMenu";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
 import { CATEGORIAS, DISPONIBLES, NUEVAS } from "../../src/data/mock";
@@ -52,6 +53,7 @@ export default function Explorar() {
 
   const [filtros, setFiltros] = useState<FiltrosVehiculo>({});
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const filtrosActivos = useMemo(
     () =>
@@ -128,6 +130,12 @@ export default function Explorar() {
             <View className="px-5 pt-3 pb-4">
               <View className="flex-row items-center justify-between mb-4">
                 <View className="flex-row items-center gap-2.5">
+                  <HeaderIconButton
+                    label="Menú"
+                    onPress={() => setDrawerOpen(true)}
+                  >
+                    <Menu size={20} color={COLORS.text} />
+                  </HeaderIconButton>
                   <Image
                     source={require("../../assets/milink-icon.png")}
                     style={{ width: 40, height: 40, borderRadius: 12 }}
@@ -137,23 +145,12 @@ export default function Explorar() {
                     Milink
                   </Text>
                 </View>
-                <View className="flex-row items-center gap-2">
-                  <HeaderIconButton
-                    label="Favoritos"
-                    onPress={() => router.push("/(tabs)/favorites")}
-                  >
-                    <Heart size={17} color={COLORS.text} />
-                  </HeaderIconButton>
-                  <HeaderIconButton label="Compartir">
-                    <Share2 size={17} color={COLORS.text} />
-                  </HeaderIconButton>
-                  <HeaderIconButton
-                    label="Perfil"
-                    onPress={() => router.push("/profile")}
-                  >
-                    <User size={17} color={COLORS.text} />
-                  </HeaderIconButton>
-                </View>
+                <HeaderIconButton
+                  label="Favoritos"
+                  onPress={() => router.push("/(tabs)/favorites")}
+                >
+                  <Heart size={17} color={COLORS.text} />
+                </HeaderIconButton>
               </View>
               <SearchBar />
             </View>
@@ -210,6 +207,12 @@ export default function Explorar() {
         mode="vehiculo"
         value={filtros}
         onApply={setFiltros}
+      />
+
+      {/* Drawer lateral con navegación a docs y cuenta */}
+      <DrawerMenu
+        visible={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
       />
     </SafeAreaView>
   );

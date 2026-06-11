@@ -448,3 +448,61 @@ export const Smartphone = (p: IconProps) => (
     <Circle cx="12" cy="19.4" r="0.95" fill={DARK} opacity={0.55} />
   </Filled>
 );
+
+// ─── Iconos del drawer lateral ─────────────────────────────────────
+
+// Hamburguesa moderna: 3 líneas, la del medio más corta (estilo Phosphor)
+export const Menu = (p: IconProps) => (
+  <Stroke {...p}>
+    <Line x1="3.5" y1="6.5" x2="20.5" y2="6.5" />
+    <Line x1="3.5" y1="12" x2="16" y2="12" />
+    <Line x1="3.5" y1="17.5" x2="20.5" y2="17.5" />
+  </Stroke>
+);
+
+// Círculo con "i" — "Sobre nosotros"
+export const InfoCircle = (p: IconProps) => (
+  <Stroke {...p}>
+    <Circle cx="12" cy="12" r="9.5" />
+    <Line x1="12" y1="11" x2="12" y2="16.5" />
+    <Circle cx="12" cy="7.7" r="0.6" fill={p.color ?? "currentColor"} stroke="none" />
+  </Stroke>
+);
+
+// Destellos celebratorios — "Beneficios"
+export const Sparkles = (p: IconProps) => (
+  <Filled {...p}>
+    <Path d="M12 2.5 13.7 8.4 19.5 10.1 13.7 11.9 12 17.8 10.3 11.9 4.5 10.1 10.3 8.4 12 2.5Z" />
+    <Path d="M19 14.2 19.8 16.6 22.2 17.4 19.8 18.2 19 20.6 18.2 18.2 15.8 17.4 18.2 16.6 19 14.2Z" />
+    <Path d="M5.3 15 5.9 16.9 7.8 17.5 5.9 18.1 5.3 20 4.7 18.1 2.8 17.5 4.7 16.9 5.3 15Z" />
+  </Filled>
+);
+
+// Círculo con "?" — "Preguntas frecuentes"
+export const HelpCircle = (p: IconProps) => (
+  <Stroke {...p}>
+    <Circle cx="12" cy="12" r="9.5" />
+    <Path d="M9.2 9.2a3 3 0 0 1 5.6 1.2c0 1.5-2.3 2.3-2.8 3.6" />
+    <Circle cx="12" cy="17.2" r="0.6" fill={p.color ?? "currentColor"} stroke="none" />
+  </Stroke>
+);
+
+// Documento con hoja doblada — "Términos y condiciones"
+export const FileText = (p: IconProps) => (
+  <Stroke {...p}>
+    <Path d="M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 20V7.5L14 2.5Z" />
+    <Polyline points="14 2.5 14 7.5 19 7.5" />
+    <Line x1="8.5" y1="12.5" x2="15.5" y2="12.5" />
+    <Line x1="8.5" y1="15.5" x2="15.5" y2="15.5" />
+    <Line x1="8.5" y1="18.5" x2="13" y2="18.5" />
+  </Stroke>
+);
+
+// Flecha saliendo de una caja — "Cerrar sesión"
+export const LogOut = (p: IconProps) => (
+  <Stroke {...p}>
+    <Path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" />
+    <Polyline points="15 16 20 12 15 8" />
+    <Line x1="20" y1="12" x2="9" y2="12" />
+  </Stroke>
+);

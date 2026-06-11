@@ -64,6 +64,7 @@ export default function RootLayout() {
               name="categoria/[key]"
               options={{ headerShown: false }}
             />
+            <Stack.Screen name="docs" options={{ headerShown: false }} />
             </Stack>
           </SafeAreaProvider>
         </FavoritosProvider>
