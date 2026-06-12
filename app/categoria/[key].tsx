@@ -1,13 +1,7 @@
 // Pantalla por categoría: muestra solo publicaciones reales aprobadas.
 // Las 6 keys de CategoriaKey deciden si es vehículo o propiedad.
 import { useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
+import { FlatList, Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -16,6 +10,7 @@ import { ChevronLeft, MapPin, Settings, Users } from "../../src/components/icons
 import { COLORS } from "../../src/theme/colors";
 import { VehicleCard } from "../../src/components/VehicleCard";
 import { FiltrosSheet } from "../../src/components/FiltrosSheet";
+import { CategoriaSkeleton } from "../../src/components/skeletons";
 import {
   listarPropiedadesAprobadas,
   listarVehiculosAprobados,
@@ -135,9 +130,7 @@ export default function CategoriaScreen() {
       </View>
 
       {cargando ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={COLORS.accent} />
-        </View>
+        <CategoriaSkeleton />
       ) : vacio ? (
         <View className="flex-1 items-center justify-center px-8">
           <Text className="font-quicksand-bold text-[16px] text-ink text-center">

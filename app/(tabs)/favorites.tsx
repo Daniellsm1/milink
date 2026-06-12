@@ -14,6 +14,7 @@ import { EmptyFavoritesIllustration } from "../../src/components/EmptyFavoritesI
 import { VehicleCard } from "../../src/components/VehicleCard";
 import { PropiedadCard } from "../../src/components/PropiedadCard";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
+import { FavoritesSkeleton } from "../../src/components/skeletons";
 import { useFavoritos } from "../../src/lib/favoritos";
 import {
   listarVehiculosPorIds,
@@ -117,7 +118,9 @@ export default function Favoritos() {
         </View>
       </View>
 
-      {!tieneFavoritos && !cargando ? (
+      {cargando && tieneFavoritos ? (
+        <FavoritesSkeleton />
+      ) : !tieneFavoritos && !cargando ? (
         <EmptyState
           title="No tienes favoritos guardados en esta lista."
           subtitle="Usa el icono de favorito para guardar los anuncios que quieras ver más tarde."

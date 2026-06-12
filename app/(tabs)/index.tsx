@@ -14,6 +14,7 @@ import { PropiedadCard } from "../../src/components/PropiedadCard";
 import { FiltrosSheet } from "../../src/components/FiltrosSheet";
 import { Heart, Menu } from "../../src/components/icons";
 import { DrawerMenu } from "../../src/components/DrawerMenu";
+import { ExplorerSkeleton } from "../../src/components/skeletons";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
 import { CATEGORIAS, DISPONIBLES, NUEVAS } from "../../src/data/mock";
@@ -86,7 +87,11 @@ export default function Explorar() {
     enabled: filtrosActivos > 0,
   });
 
-  // Lista final de cards mixtas. Si no hay filtros y la consulta mixta está
+  // Mientras cargan las queries iniciales mostramos skeletons (no mocks).
+  const cargandoExplorar =
+    filtrosActivos === 0 && (mixtoQuery.isLoading || nuevasQuery.isLoading);
+
+  // Lista final de cards mixtas. Si no hay filtros y la consulta mixta terminó
   // vacía, caemos a los mocks (vehículos) para que la pantalla no quede vacía.
   const disponibles: DisponibleMixto[] = useMemo(() => {
     if (filtrosActivos > 0) {
@@ -95,10 +100,11 @@ export default function Explorar() {
         data: v,
       }));
     }
+    if (cargandoExplorar) return [];
     const mixto = mixtoQuery.data ?? [];
     if (mixto.length > 0) return mixto;
     return DISPONIBLES.map((v) => ({ kind: "vehiculo", data: v }));
-  }, [filtrosActivos, filtradosQuery.data, mixtoQuery.data]);
+  }, [filtrosActivos, cargandoExplorar, filtradosQuery.data, mixtoQuery.data]);
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-bg">
@@ -155,48 +161,59 @@ export default function Explorar() {
               <SearchBar />
             </View>
 
-            {/* Nuevas entradas */}
-            <View className="pt-2 pb-5">
-              <SectionHeader title="Nuevas entradas" />
-              <NewArrivalsCarousel
-                data={nuevas}
-                onPressItem={(item) => router.push(`/vehicle/${item.id}`)}
-              />
-            </View>
-
-            {/* Categorías */}
-            <View className="pb-6">
-              <SectionHeader title="Categorías" action="Explorar" />
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}
-              >
-                {CATEGORIAS.map((cat) => (
-                  <CategoryPill
-                    key={cat.key}
-                    category={cat}
-                    onPress={() => router.push(`/categoria/${cat.key}`)}
+            {cargandoExplorar ? (
+              // Skeletons mientras cargan las queries iniciales
+              <ExplorerSkeleton />
+            ) : (
+              <View>
+                {/* Nuevas entradas */}
+                <View className="pt-2 pb-5">
+                  <SectionHeader title="Nuevas entradas" />
+                  <NewArrivalsCarousel
+                    data={nuevas}
+                    onPressItem={(item) => router.push(`/vehicle/${item.id}`)}
                   />
-                ))}
-              </ScrollView>
-            </View>
+                </View>
 
-            {/* Disponibles (encabezado; la grilla es el FlatList) */}
-            <SectionHeader
-              title="Disponibles para ti"
-              action={
-                filtrosActivos > 0 ? `Filtrar (${filtrosActivos})` : "Filtrar"
-              }
-              onAction={() => setSheetOpen(true)}
-            />
+                {/* Categorías */}
+                <View className="pb-6">
+                  <SectionHeader title="Categorías" action="Explorar" />
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}
+                  >
+                    {CATEGORIAS.map((cat) => (
+                      <CategoryPill
+                        key={cat.key}
+                        category={cat}
+                        onPress={() => router.push(`/categoria/${cat.key}`)}
+                      />
+                    ))}
+                  </ScrollView>
+                </View>
+
+                {/* Disponibles (encabezado; la grilla es el FlatList) */}
+                <SectionHeader
+                  title="Disponibles para ti"
+                  action={
+                    filtrosActivos > 0
+                      ? `Filtrar (${filtrosActivos})`
+                      : "Filtrar"
+                  }
+                  onAction={() => setSheetOpen(true)}
+                />
+              </View>
+            )}
           </View>
         }
         ListFooterComponent={
-          <View className="pt-6 pb-2">
-            <SectionHeader title="¿Por qué MiLink?" hideAction />
-            <BeneficiosCarousel />
-          </View>
+          cargandoExplorar ? null : (
+            <View className="pt-6 pb-2">
+              <SectionHeader title="¿Por qué MiLink?" hideAction />
+              <BeneficiosCarousel />
+            </View>
+          )
         }
       />
 
