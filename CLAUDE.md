@@ -31,6 +31,7 @@ admin** antes de aparecer en el feed público.
 | Blur | `expo-blur` | ~15.0.8 |
 | Fuente | Quicksand (`@expo-google-fonts/quicksand`) | 0.4.1 |
 | Schemas | Zod | 4.4.3 |
+| Markdown docs | `react-native-markdown-display` | ✓ |
 | Formularios | **NO** usamos React Hook Form aunque esté en `package.json`. | — |
 
 **Web preview:** `react-native-web` está instalado para correr en navegador
@@ -42,16 +43,15 @@ admin** antes de aparecer en el feed público.
 
 ### Commits
 - **Sin formato técnico** (`feat:`, `fix:`, etc.). Usar **nombres descriptivos en camelCase** que describan qué se hizo:
-  - ✅ `pantallaLogin`, `flujoPublicacionConVerificacion`, `fixSolapamientoTabBar`,
-    `carruselYDisponiblesConPropiedades`, `nombreRealPropietarioEnDetalle`.
-  - ❌ `feat: add login screen`, `chore: bump deps`.
-- **NO** incluir `Co-Authored-By: Claude` en los commits (se quitó después del primero).
+  - Si: `pantallaLogin`, `flujoPublicacionConVerificacion`, `fixSolapamientoTabBar`.
+  - No: `feat: add login screen`, `chore: bump deps`.
+- **NO** incluir `Co-Authored-By: Claude` en los commits.
 - Crear commits **solo cuando el usuario lo pida explícitamente**.
 
 ### Idioma
 - Todo el texto visible al usuario en **español colombiano**, hardcodeado.
 - **NO usar i18n** (no está instalado, no es prioridad).
-- Comentarios de código y nombres de variables también en español cuando aporta claridad (ej: `vehiculo`, `propiedad`, `crearVehiculo`, `nombre_propietario`).
+- Comentarios de código y nombres de variables en español cuando aporta claridad.
 
 ### Estilos
 - **NativeWind** vía `className` con tokens del Tailwind config:
@@ -63,10 +63,10 @@ admin** antes de aparecer en el feed público.
 
 ### Iconos
 - Todos centralizados en **`src/components/icons.tsx`** con dos patrones:
-  - **Stroke** (`Stroke` wrapper): lineales, color via prop. Ej: `Mail`, `Lock`, `Heart`, `ChevronLeft`, `Star`, `Camera`.
-  - **Filled** (`Filled` wrapper): rellenos. Ej: `Truck`, `Car`, `Bike`, `Building2`, `Home`, `Trees`, `WhatsApp`, `HeartFilled`.
+  - **Stroke** (`Stroke` wrapper): lineales, color via prop. Ej: `Mail`, `Lock`, `Heart`, `ChevronLeft`, `Star`, `Camera`, `Menu`, `InfoCircle`, `HelpCircle`, `FileText`, `LogOut`, `ClipboardList`, `MessageCircle`.
+  - **Filled** (`Filled` wrapper): rellenos. Ej: `Truck`, `Car`, `Bike`, `Building2`, `Home`, `Trees`, `WhatsApp`, `HeartFilled`, `BadgeDolar`, `ShieldCheck`, `Sparkles`, `Smartphone`.
   - Marca multicolor: `GoogleIcon`, `FacebookIcon`, `AppleIcon` (Svg directo sin wrapper).
-- `CATEGORY_ICONS` mapea `camionetas/carros/motos/apartamentos/casas/fincas` → componente.
+- `CATEGORY_ICONS` mapea categorías → componente (legacy). **`CategoryPill` ahora usa imágenes WebP** (`CATEGORY_IMAGES` con `require()`).
 - Si el usuario pide un icono nuevo: añadirlo aquí con el patrón existente.
 
 ---
@@ -75,11 +75,11 @@ admin** antes de aparecer en el feed público.
 
 ```
 app/                            # Expo Router (rutas)
-├── _layout.tsx                 # Stack root + SessionProvider + QueryClient + Splash/fonts
+├── _layout.tsx                 # Stack root + Providers + SplashOverlay + prefetch
 ├── (tabs)/
 │   ├── _layout.tsx             # CustomTabBar (BlurView absolute)
-│   ├── index.tsx               # Explorar: hero + carrusel + categorías + grid mixto
-│   ├── favorites.tsx           # (UI estática por ahora)
+│   ├── index.tsx               # Explorar: hero + carrusel + categorías + grid mixto + beneficios
+│   ├── favorites.tsx           # Favoritos funcionales (Supabase query por IDs + AsyncStorage)
 │   ├── publish.tsx             # Paso 1: términos legales + checkboxes
 │   └── profile.tsx             # Perfil (logueado o anónimo) + link a /admin si es admin
 ├── auth/
@@ -90,23 +90,37 @@ app/                            # Expo Router (rutas)
 ├── vehicle/
 │   └── [id].tsx                # Detalle (sirve vehículos Y propiedades por id)
 ├── categoria/
-│   └── [key].tsx               # Pantalla por categoría con FiltrosSheet
+│   └── [key].tsx               # Pantalla por categoría con FiltrosSheet + CategoriaSkeleton
+├── docs/
+│   ├── _layout.tsx             # Stack con headers nativos, Quicksand_700Bold, back accent
+│   ├── terminos-condiciones.tsx
+│   ├── politica-privacidad.tsx
+│   ├── sobre-nosotros.tsx
+│   ├── preguntas-frecuentes.tsx
+│   ├── beneficios.tsx
+│   └── guia-uso-seguro.tsx     # Cada una renderiza <MarkdownDoc source={require(...)} />
 └── admin/
     └── index.tsx               # Panel de moderación (gated por correo)
 
 src/
 ├── components/
-│   ├── icons.tsx               # TODOS los iconos del proyecto
+│   ├── icons.tsx               # TODOS los iconos del proyecto (~30 iconos)
 │   ├── CustomTabBar.tsx        # Tab bar con BlurView y FAB "Publicar"
 │   ├── tabBarMetrics.ts        # useTabBarHeight() + TAB_BAR_BASE_HEIGHT=64
 │   ├── Avatar.tsx              # Avatar vectorial (no foto humana)
 │   ├── SearchBar.tsx
-│   ├── SectionHeader.tsx
+│   ├── SectionHeader.tsx       # Props: title, action?, onAction?, hideAction?
 │   ├── NewArrivalsCarousel.tsx # Auto-scroll cada 2.5s con pausa por drag
 │   ├── NewArrivalCard.tsx
-│   ├── CategoryPill.tsx
-│   ├── VehicleCard.tsx
-│   ├── PropiedadCard.tsx
+│   ├── BeneficiosCarousel.tsx  # Auto-scroll 3s, 5 cards con iconos propios
+│   ├── CategoryPill.tsx        # Usa imágenes WebP (no SVG icons)
+│   ├── VehicleCard.tsx         # Con corazón favorito (sibling, no hijo)
+│   ├── PropiedadCard.tsx       # Con corazón favorito (sibling, no hijo)
+│   ├── DrawerMenu.tsx          # Modal transparent + Reanimated translateX
+│   ├── MarkdownDoc.tsx         # expo-asset + fetch(uri) para .md
+│   ├── Skeleton.tsx            # Base shimmer con Reanimated (bg-line)
+│   ├── skeletons.tsx           # ExplorerSkeleton, FavoritesSkeleton, CategoriaSkeleton
+│   ├── SplashScreen.tsx        # Logo SVG animado (stroke-draw + glow + círculo verde)
 │   ├── EmptyFavoritesIllustration.tsx
 │   ├── FiltrosSheet.tsx        # BottomSheet con mode "vehiculo" | "propiedad"
 │   └── form/
@@ -120,17 +134,18 @@ src/
 │   └── terminosPublicacion.ts  # T&C estructurados (espejo del .md de assets)
 ├── data/
 │   ├── mock.ts                 # NUEVAS, DISPONIBLES, CATEGORIAS (fallback de UI)
-│   └── detail.ts               # getDetalleById (mock) + fetchDetalleById (async, busca veh y prop)
+│   └── detail.ts               # getDetalleById (mock) + fetchDetalleById (async)
 ├── lib/
 │   ├── supabase.ts             # createClient<Database>() con AsyncStorage
 │   ├── auth.tsx                # SessionProvider + useSession()
-│   ├── admins.ts               # ADMIN_EMAILS = ["daniel200430@hotmail.com"] + esAdmin(user)
+│   ├── favoritos.tsx           # FavoritosProvider + useFavoritos() (AsyncStorage)
+│   ├── admins.ts               # ADMIN_EMAILS + esAdmin(user)
 │   └── validation/
-│       └── publicacion.ts      # Zod: vehiculoSchema, propiedadSchema, COUNTRY_CODES, telefonoCompleto()
+│       └── publicacion.ts      # Zod: vehiculoSchema, propiedadSchema
 ├── services/
 │   ├── storage.ts              # subirImagenes() — base64 → Storage 'publicaciones'
 │   ├── publicaciones.ts        # crearVehiculo, crearPropiedad, getUsuarioActual()
-│   ├── feed.ts                 # listarVehiculosAprobados, listarPropiedadesAprobadas, listarMixtoAprobado, listarNuevasEntradas
+│   ├── feed.ts                 # listar*Aprobados, listarMixtoAprobado, listarNuevasEntradas, listar*PorIds
 │   └── moderacion.ts           # listarPendientes, aprobar, rechazar
 ├── theme/
 │   └── colors.ts               # COLORS y FONTS tokens
@@ -141,9 +156,20 @@ supabase/
 └── migrations/                 # 0001 → 0005 (el usuario los corre en SQL Editor)
 
 assets/
-├── milink-icon.png             # Logo (¡pesa ~5 MB ahora! pendiente comprimir)
+├── milink-icon.png             # Logo (~5 MB — pendiente comprimir)
+├── icono1.svg                  # SVG auto-traced original (1.9MB, NO usado por código)
 ├── favoritosvacio.png
-└── legal/terminos_condiciones_publicacion.md   # Documento canónico
+├── *.webp                      # 6 imágenes de categoría (camionetas/carros/motos/apartamentos/casas/fincas)
+├── docs/                       # 6 documentos markdown institucionales (01–06)
+│   ├── 01_Terminos_y_Condiciones.md
+│   ├── 02_Politica_Tratamiento_Datos_y_Privacidad.md
+│   ├── 03_Sobre_Nosotros.md
+│   ├── 04_Preguntas_Frecuentes.md
+│   ├── 05_Beneficios_de_usar_MiLink.md
+│   └── 06_Guia_de_Uso_Seguro_y_Requisitos.md
+└── legal/terminos_condiciones_publicacion.md
+
+metro.config.js                 # Extiende Expo default + NativeWind CSS + .md en assetExts
 ```
 
 ---
@@ -152,32 +178,40 @@ assets/
 
 | Ruta | Pantalla | Quién navega aquí |
 |---|---|---|
-| `/(tabs)` | Tab bar root | Splash inicial |
-| `/(tabs)` index | **Explorar** (default) | Tab "Explorar" del bar |
-| `/(tabs)/favorites` | Favoritos (estado vacío estático por ahora) | Tab "Favoritos" |
-| `/(tabs)/publish` | Términos legales (paso 1) | Tab "Publicar" (FAB) y botón "Publicar un bien" del perfil |
-| `/(tabs)/profile` | Perfil (logueado o invitación a login) | Tab "Perfil" e icono ☺ del header de Explorar |
-| `/auth/login` | Login con email/password (+ stubs sociales) | Botón "Iniciar sesión / Registrarse" del perfil |
+| `/(tabs)` index | **Explorar** (default) | Splash → Tab "Explorar" |
+| `/(tabs)/favorites` | Favoritos (funcional con Supabase queries) | Tab "Favoritos" / corazón del hero |
+| `/(tabs)/publish` | Términos legales (paso 1) | Tab "Publicar" (FAB) / "Publicar un bien" del perfil |
+| `/(tabs)/profile` | Perfil (logueado o invitación a login) | Tab "Perfil" |
+| `/auth/login` | Login email/password (+ stubs sociales) | Botón del perfil / auth gate |
 | `/auth/register` | signUp | Link "Regístrate" del login |
-| `/publish/form` | Formulario completo | Botón "Continuar al formulario" del paso legal (requiere sesión, si no redirige a login) |
-| `/vehicle/[id]` | Detalle (vehículo **o** propiedad — `fetchDetalleById` decide) | Tarjetas del feed, carrusel, panel admin |
-| `/categoria/[key]` | Listado filtrado por categoría | Píldoras de "Categorías" en Explorar |
-| `/admin` | Panel de moderación | Botón "Panel de moderación" del perfil (solo si `esAdmin(user)`) |
+| `/publish/form` | Formulario completo | Paso legal → requiere sesión |
+| `/vehicle/[id]` | Detalle (veh **o** propiedad) | Tarjetas feed, carrusel, panel admin |
+| `/categoria/[key]` | Listado por categoría | Píldoras de "Categorías" en Explorar |
+| `/docs/*` | 6 pantallas de documentos institucionales | Drawer lateral (accesibles sin login) |
+| `/admin` | Panel de moderación | Perfil (solo si `esAdmin(user)`) |
 
 ---
 
 ## Decisiones de arquitectura
 
-- **Auth no bloqueante**: la app abre directo en Explorar sin pedir login. Solo se pide al **Reservar** o al **Publicar**. El header tiene ícono de Perfil que va a `/profile`; ahí se ofrece login.
+- **Auth no bloqueante**: la app abre en Explorar sin login. Solo se pide al **Reservar**, **Publicar** o **marcar favorito** (anon → Alert con opción de ir a login).
 - **`SessionProvider`** (en `src/lib/auth.tsx`) escucha `onAuthStateChange` y expone `useSession()` con `{ session, user, loading, signOut }`.
-- **Tabs con `BlurView` absoluto** (no ocupan layout). Pantallas con footer fijo o listas largas deben reservar espacio con **`useTabBarHeight()`** (de `src/components/tabBarMetrics.ts`). NO hardcodear paddings tipo `120`.
-- **Carrusel "Nuevas entradas"** auto-scroll cada 2.5 s con `scrollToOffset` (más fiable que `scrollToIndex`). Pausa cuando el usuario arrastra (`onScrollBeginDrag`) y reanuda al soltar (`onScrollEndDrag`). Usa bandera `userDraggingRef` para distinguir scrolls programáticos de manuales (si no, el `onMomentumScrollEnd` sobreescribe el índice).
-- **Detalle async + hero**: `fetchDetalleById` primero mira mocks, después tabla `vehiculos`, después `propiedades` (en ese orden). Animación de entrada con Reanimated `Keyframe` (fade + scale 1.08→1, 380 ms) en un **wrapper interno** (el wrapper externo con `marginTop: -24` no debe tener transform, rompía stacking en web).
-- **Filtros**: un solo componente `FiltrosSheet` con `mode: "vehiculo" | "propiedad"`. Acepta `categoriaFija`/`tipoFijo` para cuando vienes de una categoría específica. En Explorar, cuando hay filtros activos solo se muestran vehículos filtrados (no mocks ni propiedades).
-- **Form de publicar usa `useState` + Zod**, no React Hook Form (decisión consciente para no reescribir ~30 campos). Esquema en `src/lib/validation/publicacion.ts`.
-- **Storage**: subida via `expo-image-manipulator` que devuelve base64 → `base64-arraybuffer` → `supabase.storage.from('publicaciones').upload(...)`. Funciona web y nativo. Path `{userId}/{tipo}/{ts}-{i}.jpg`. RLS exige que el primer segmento del path = `auth.uid()`.
-- **`auth.users` NO es legible desde el cliente** (RLS). Por eso denormalizamos `nombre_propietario` directamente en `vehiculos` y `propiedades` (set en INSERT con el `user_metadata.nombre`, y backfill via función `auth_user_nombre()` con `SECURITY DEFINER` en la migración 0005).
-- **Admin** gated por correo en `src/lib/admins.ts` (`ADMIN_EMAILS = ["daniel200430@hotmail.com"]`) y por policies RLS de la migración 0003 (función `public.es_admin()` debe coincidir con esa lista).
+- **`FavoritosProvider`** (en `src/lib/favoritos.tsx`) persiste en AsyncStorage (`@milink:favoritos`). Expone `useFavoritos()` con `{ favoritos, esFavorito(id), toggleFavorito(id, tipo), loading }`. Revierte estado si el write a AsyncStorage falla.
+- **Tabs con `BlurView` absoluto** (no ocupan layout). Pantallas con footer fijo o listas largas deben reservar espacio con **`useTabBarHeight()`** (de `src/components/tabBarMetrics.ts`). NO hardcodear paddings.
+- **Splash animado overlay**: logo SVG redibujado a mano (5 paths limpios en viewBox `0 0 100 100`: techo sup, techo inf, chimenea, eslabón izq/der). Fondo `#0F1115` con grid estático + sparkles pulsantes. Animación de 6 fases (~3.5s): stroke-draw con `strokeDashoffset`, glow neon (3 capas), hold, círculo verde `withSpring`, sólido, fade-out con `runOnJS(onFinish)`. Se renderiza como overlay absoluto (`zIndex 999`); el `<Stack>` monta detrás desde t=0 y las queries disparan durante la animación.
+- **Prefetch en splash**: `queryClient.prefetchQuery` de `nuevas-entradas` y `mixto-aprobado` en `_layout.tsx` `useEffect`. TanStack deduplica si Explorar lanza las mismas queries.
+- **Skeleton loaders**: `Skeleton` base con shimmer Reanimated (`bg-line`, barra blanca op 0.3, `withRepeat(withTiming(1200ms), -1)`). Tres variantes: `ExplorerSkeleton` (carrusel + píldoras + grid), `FavoritesSkeleton` (4 cards), `CategoriaSkeleton` (6 cards). En Explorar: skeleton durante `isLoading`, mocks solo como fallback post-carga vacía.
+- **CategoryPill con WebP**: imágenes WebP en vez de iconos SVG dentro de las píldoras de categoría. `CATEGORY_IMAGES` con `require()`. camionetas/carros son 10% más grandes via `CATEGORY_IMAGE_SIZE`.
+- **Carrusel "Nuevas entradas"** auto-scroll cada 2.5s con `scrollToOffset` (más fiable que `scrollToIndex`). Pausa cuando el usuario arrastra (`userDraggingRef`). **BeneficiosCarousel** replica el mismo patrón (auto-scroll 3s, 5 cards hardcoded).
+- **Drawer lateral**: `Modal transparent` + Reanimated `useSharedValue` para `translateX` y `overlayOpacity` (280ms, `Easing.out(cubic)`). Ancho: `min(80% viewport, 320)`. Header con avatar+inicial (logueado) o logo (anon). 7 items de navegación + logout rojo. `goTo(ruta)` cierra drawer + `setTimeout(router.push, 280)`.
+- **Documentos institucionales**: 6 pantallas bajo `/docs/`, cada una renderiza `<MarkdownDoc source={require(...)} />`. `MarkdownDoc` usa `expo-asset` + `fetch(asset.localUri ?? asset.uri)` para cargar texto (NO `FileSystem.readAsStringAsync`, deprecado en SDK 54). Accesibles sin login.
+- **Detalle async + hero**: `fetchDetalleById` busca mocks → `vehiculos` → `propiedades`. Animación de entrada con Reanimated `Keyframe` en wrapper interno.
+- **Filtros**: `FiltrosSheet` con `mode: "vehiculo" | "propiedad"`. Acepta `categoriaFija`/`tipoFijo`.
+- **Form de publicar usa `useState` + Zod**, no React Hook Form.
+- **Storage**: subida via `expo-image-manipulator` base64 → `supabase.storage.from('publicaciones').upload(...)`. Path `{userId}/{tipo}/{ts}-{i}.jpg`.
+- **`auth.users` NO es legible desde el cliente**. `nombre_propietario` denormalizado en `vehiculos`/`propiedades`.
+- **Admin** gated por correo en `src/lib/admins.ts` + `public.es_admin()` en RLS.
+- **Corazón favorito como sibling**: en `VehicleCard`/`PropiedadCard` el `Pressable` del corazón es hermano (no hijo) del `Pressable` de la card, para evitar `<button>` anidados en web.
 
 ---
 
@@ -186,21 +220,21 @@ assets/
 ### Tablas (schema `public`)
 
 #### `vehiculos`
-Campos clave: `id`, `usuario_id` → `auth.users(id)`, `marca`, `modelo`, `ano`, `categoria` (enum `vehiculo_categoria`: automovil/camioneta/motocicleta), `transmision` (mecanico/automatico), `tipo_combustible` (gasolina/diesel/hibrido/electrico/gas), `color`, `numero_sillas`, `kilometraje`, `kilometraje_permitido_diario`, `precio_alquiler_diario`, `ciudad_entrega_principal`, `ciudad_entrega_opcional`, `tiene_aire_acondicionado`, `imagenes text[]`, **`status` (`publicacion_status`: pending_approval/approved/rejected — default pending_approval)**, **`telefono_contacto`**, **`nombre_propietario`**, `created_at`, `updated_at`.
+Campos clave: `id`, `usuario_id` → `auth.users(id)`, `marca`, `modelo`, `ano`, `categoria` (enum: automovil/camioneta/motocicleta), `transmision`, `tipo_combustible`, `color`, `numero_sillas`, `kilometraje`, `kilometraje_permitido_diario`, `precio_alquiler_diario`, `ciudad_entrega_principal`, `ciudad_entrega_opcional`, `tiene_aire_acondicionado`, `imagenes text[]`, `status` (pending_approval/approved/rejected), `telefono_contacto`, `nombre_propietario`, timestamps.
 
 #### `propiedades`
-Campos clave: `id`, `usuario_id`, `tipo_propiedad` (enum `propiedad_tipo`: finca/apartamento/casa), `titulo`, `descripcion`, `departamento`, `ciudad_municipio`, `precio_alquiler_diario`, `capacidad_huespedes`, `numero_habitaciones`, `numero_camas`, `numero_banos`, `tiene_piscina/wifi/parqueadero/aire_acondicionado/zona_bbq`, `es_pet_friendly`, `imagenes text[]`, `status`, `telefono_contacto`, `nombre_propietario`, timestamps.
+Campos clave: `id`, `usuario_id`, `tipo_propiedad` (finca/apartamento/casa), `titulo`, `descripcion`, `departamento`, `ciudad_municipio`, `precio_alquiler_diario`, `capacidad_huespedes`, `numero_habitaciones/camas/banos`, amenidades booleanas, `imagenes text[]`, `status`, `telefono_contacto`, `nombre_propietario`, timestamps.
 
 #### `resenas`
-Polimórfica con XOR check: solo uno de `vehiculo_id` / `propiedad_id` puede ser non-null. `calificacion` int CHECK 1..5. Índices únicos `(usuario_id, vehiculo_id)` y `(usuario_id, propiedad_id)`.
+Polimórfica con XOR check: solo uno de `vehiculo_id`/`propiedad_id` non-null. `calificacion` int CHECK 1..5.
 
 ### RLS (resumen)
-- `select`: público solo ve `approved`; el dueño ve todos los suyos; admins ven todos.
-- `insert`: solo authenticated, `auth.uid() = usuario_id` y `status = 'pending_approval'`.
-- `update` / `delete`: solo el dueño (forzando `status = 'pending_approval'`). Admins tienen policy `update` separada que permite cambiar `status`.
+- `select`: público solo ve `approved`; dueño ve los suyos; admins ven todos.
+- `insert`: solo authenticated, `auth.uid() = usuario_id`, `status = 'pending_approval'`.
+- `update`/`delete`: dueño (forzando pending). Admins: policy update separada para `status`.
 
 ### Storage
-- Bucket **`publicaciones`** (público). Policies: lectura abierta; insert/update/delete solo en `{auth.uid()}/...`.
+- Bucket **`publicaciones`** (público). Insert/update/delete solo en `{auth.uid()}/...`.
 
 ---
 
@@ -208,111 +242,96 @@ Polimórfica con XOR check: solo uno de `vehiculo_id` / `propiedad_id` puede ser
 
 | N° | Archivo | Qué hace |
 |---|---|---|
-| 0001 | `0001_init.sql` | Tablas `vehiculos`/`propiedades`/`resenas`, enums, RLS básico, índices, triggers `updated_at` |
-| 0002 | `0002_publicacion_status_y_storage.sql` | Enum `publicacion_status` + columna `status`, policies select/insert con status, bucket `publicaciones` + policies |
-| 0003 | `0003_admin_policies.sql` | Función `public.es_admin()` + policies update/select para admins |
+| 0001 | `0001_init.sql` | Tablas, enums, RLS básico, índices, triggers `updated_at` |
+| 0002 | `0002_publicacion_status_y_storage.sql` | Enum `publicacion_status`, columna `status`, bucket `publicaciones` |
+| 0003 | `0003_admin_policies.sql` | `public.es_admin()` + policies admin |
 | 0004 | `0004_telefono_contacto.sql` | Columna `telefono_contacto` en ambas tablas |
-| 0005 | `0005_nombre_propietario.sql` | Columna `nombre_propietario` + función `auth_user_nombre()` con SECURITY DEFINER + backfill |
+| 0005 | `0005_nombre_propietario.sql` | Columna `nombre_propietario` + backfill con `SECURITY DEFINER` |
 
-**Status real:** todas aplicadas en el proyecto `mucpwtieilxgasxagujo` del usuario.
+**Status:** todas aplicadas en el proyecto `mucpwtieilxgasxagujo`.
 
-> **Importante:** mi MCP de Supabase NO está conectado a la cuenta del usuario.
-> No puedo aplicar migraciones directamente. Cuando hay una nueva: la creo en
-> `supabase/migrations/` y el usuario la pega en SQL Editor → Run.
+> **Nota:** MCP de Supabase NO conectado a la cuenta del usuario. Migraciones nuevas van a `supabase/migrations/` y el usuario las pega en SQL Editor.
 
 ---
 
 ## Configuración de entorno
 
-`.env` (gitignored) — variables que se inyectan al bundle (`EXPO_PUBLIC_*`):
-```
-EXPO_PUBLIC_SUPABASE_URL=https://mucpwtieilxgasxagujo.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
-```
-`.env.example` está commiteado como plantilla.
+`.env` (gitignored): `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`. `.env.example` commiteado como plantilla.
 
-Sesión: `AsyncStorage` (no SecureStore para que funcione web). Polyfill global de URL via `react-native-url-polyfill/auto` (importado al tope de `src/lib/supabase.ts`).
+Sesión: `AsyncStorage` (no SecureStore para que funcione web). Polyfill URL via `react-native-url-polyfill/auto` en `src/lib/supabase.ts`.
 
 ---
 
 ## Comandos útiles
 
 ```bash
-# Chequeo de tipos
-npx tsc --noEmit
-
-# Preview web (puerto 8095 — el que usa el MCP expo-web)
-npx expo start --web --port 8095
-
-# Dev server normal
-npx expo start
-
-# Instalar deps con versiones del SDK 54
-npx expo install <paquete>
-
-# Build de desarrollo (solo cuando se agregan libs nativas)
-eas build --profile development --platform android
-
-# Aplicar migración Supabase
-# → abrir Dashboard → SQL Editor → pegar contenido del .sql → Run
+npx tsc --noEmit                          # Chequeo de tipos
+npx expo start --web --port 8095          # Preview web (MCP expo-web)
+npx expo start                            # Dev server normal
+npx expo install <paquete>                # Deps con versiones del SDK 54
+eas build --profile development --platform android  # Build de desarrollo
 ```
 
 ---
 
 ## Gotchas (cosas que ya nos mordieron)
 
-1. **Tab bar es `absolute bottom-0` con `BlurView`** → no ocupa layout. Cualquier pantalla con footer fijo o lista larga debe usar `useTabBarHeight()`; no hardcodear `paddingBottom: 120`.
-2. **Reanimated 4** eliminó `sharedTransitionTag`. No intentar shared element real; usar hero (fade + scale) en un wrapper interno (poner `transform` en el contenedor con `marginTop:-24` rompe el stacking en web).
-3. **Carrusel auto-scroll**: `scrollToOffset(index * STEP)` es más fiable que `scrollToIndex`. Necesita `userDraggingRef` para que `onMomentumScrollEnd` no sobrescriba el índice tras un auto-scroll.
-4. **`auth.users` bloqueado en el cliente** por RLS. Para mostrar el nombre del propietario denormalizamos `nombre_propietario` en las publicaciones (capturado en INSERT desde `user_metadata.nombre`, fallback al local-part del email).
-5. **`scrollToOffset` y `pagingEnabled`**: en el carrusel del detalle (imágenes), `pagingEnabled` mide por ancho de pantalla; en el de Nuevas entradas usamos `snapToInterval` con `CARD_WIDTH + GAP`.
-6. **`expo install` vs `npm install`**: usar siempre `expo install` para deps de Expo SDK 54.
-7. **Logo `assets/milink-icon.png` ~5 MB** — pendiente comprimir (debería ser <100 KB para un asset que se renderiza a 40×40 / 72×72).
-8. **Email confirmation** en Supabase Auth → si está ON, el signUp pide confirmar correo antes de poder publicar. Para pruebas conviene OFF (Authentication → Sign In / Providers → Email).
-9. **Anim de Reanimated 4 en web** funciona, pero algunas cosas como el `transform` durante la animación dejan residuos. Si algo se ve raro en web, **no es necesariamente bug en nativo**.
-10. **MCP Supabase** está conectado a otra cuenta — no puedo correr migraciones directamente, hay que dárselas al usuario.
+1. **Tab bar `absolute bottom-0` con BlurView** → no ocupa layout. Usar `useTabBarHeight()`, no hardcodear paddings.
+2. **Reanimated 4 eliminó `sharedTransitionTag`**. No intentar shared element; usar hero fade+scale en wrapper interno.
+3. **Carrusel auto-scroll**: `scrollToOffset(index * STEP)` más fiable que `scrollToIndex`. Necesita `userDraggingRef` para no sobrescribir índice tras auto-scroll.
+4. **`auth.users` bloqueado en cliente** por RLS. `nombre_propietario` denormalizado en publicaciones.
+5. **`scrollToOffset` y `pagingEnabled`**: carrusel detalle usa `pagingEnabled` (ancho pantalla); Nuevas entradas usa `snapToInterval`.
+6. **`expo install` vs `npm install`**: siempre `expo install` para deps de Expo SDK 54.
+7. **Logo `milink-icon.png` ~5 MB** — pendiente comprimir.
+8. **Email confirmation** en Supabase Auth → para pruebas conviene OFF.
+9. **Reanimated 4 en web**: funciona, pero `transform` durante animación puede dejar residuos. Si se ve raro en web, no es necesariamente bug en nativo.
+10. **MCP Supabase** conectado a otra cuenta — migraciones se dan al usuario para SQL Editor.
+11. **Nested `<button>` en web**: Pressable corazón dentro de Pressable card → `<button>` anidados (HTML inválido). Solución: heart como **sibling** absoluto, no hijo.
+12. **`FileSystem.readAsStringAsync` deprecado en SDK 54**: usar `fetch(asset.localUri ?? asset.uri)` para cargar archivos .md.
+13. **`icono1.svg` inutilizable**: SVG auto-traced de 1,889 paths (1.9MB). Queda en el repo como referencia; el splash usa logo redibujado a mano.
+14. **`react-native-markdown-display` + React 19**: requiere `--legacy-peer-deps`. Después de instalarlo, verificar que `react-native-worklets` sigue presente.
 
 ---
 
 ## Cómo extender (recetas)
 
 ### Agregar un icono nuevo
-Editar `src/components/icons.tsx`:
-- Lineal (con `color`): usar wrapper `Stroke`.
-- Relleno (con `color`): usar wrapper `Filled`.
-- Multicolor de marca: `Svg` directo.
+Editar `src/components/icons.tsx`: Stroke (`Stroke` wrapper) para lineales, Filled (`Filled` wrapper) para rellenos, `Svg` directo para multicolor.
 
 ### Agregar una pantalla nueva
 1. Crear archivo en `app/...` (Expo Router toma la ruta del path).
 2. Registrarla en `app/_layout.tsx` con `<Stack.Screen name="..." />` (si no es tab).
-3. Si necesita gate de auth: leer `useSession()` y `router.replace('/auth/login')` si no hay user.
-4. Si necesita gate de admin: leer `esAdmin(user)` de `src/lib/admins.ts`.
+3. Auth gate: `useSession()` + `router.replace('/auth/login')`. Admin gate: `esAdmin(user)`.
+
+### Agregar un documento institucional
+1. Crear `.md` en `assets/docs/` (numerado `0N_Nombre.md`).
+2. Crear screen en `app/docs/` con `<MarkdownDoc source={require("../../assets/docs/0N_Nombre.md")} />`.
+3. Añadir item al drawer en `DrawerMenu.tsx` (array de items con icono + label + ruta).
 
 ### Agregar una columna a vehículos/propiedades
-1. Crear `supabase/migrations/000N_descripcion.sql` con `alter table … add column if not exists …`.
-2. Decirle al usuario que la corra en SQL Editor.
-3. Actualizar `src/types/database.ts` (Row + Insert).
-4. Si va al INSERT del form: actualizar `src/services/publicaciones.ts` (`VehiculoFormData`/`PropiedadFormData` y el insert).
-5. Si se muestra en feed/detalle: actualizar selects en `src/services/feed.ts` y/o `src/data/detail.ts`.
+1. Crear migración en `supabase/migrations/`. 2. Actualizar `src/types/database.ts`. 3. Actualizar insert en `src/services/publicaciones.ts`. 4. Si se muestra: actualizar selects en `src/services/feed.ts`.
 
 ### Agregar un filtro nuevo
-1. Extender `FiltrosVehiculo` o `FiltrosPropiedad` en `src/services/feed.ts`.
-2. Aplicar en la query (`q.eq/ilike/gte/lte`).
-3. Añadir input al `FiltrosSheet` correspondiente (`src/components/FiltrosSheet.tsx`).
+1. Extender tipo `Filtros*` en `src/services/feed.ts`. 2. Aplicar en la query. 3. Añadir input en `FiltrosSheet.tsx`.
 
 ### Agregar un admin nuevo
-1. Editar `ADMIN_EMAILS` en `src/lib/admins.ts`.
-2. **También** editar el array de emails dentro de `public.es_admin()` en `supabase/migrations/0003_admin_policies.sql` (o crear una migración 000N que reemplace la función) y correrlo en SQL Editor.
-
-### Cambiar un texto / agregar un mensaje
-Todo está en español hardcodeado. Solo editar el archivo y listo (no hay i18n).
+1. Editar `ADMIN_EMAILS` en `src/lib/admins.ts`. 2. Actualizar `public.es_admin()` en migraciones (o nueva migración).
 
 ---
 
-## Estado actual (snapshot al cierre de la última sesión)
+## Estado actual (snapshot junio 2025)
 
-- **Flujo completo funcional**: registro → login → publicar (con T&C + form + 3 fotos + modal) → admin aprueba → aparece en Explorar (mixto veh+prop) y en su categoría → detalle muestra propietario real con teléfono y WhatsApp link.
-- **Auth real**: signIn / signUp con Supabase Auth, sesión persistida en AsyncStorage.
-- **Storage real**: las 3 fotos suben al bucket `publicaciones` y se renderizan en el feed/detalle.
-- **Verificado en web preview**: TSC siempre limpio antes de commit.
-- **Pendientes conocidos**: comprimir logo (~5 MB), conectar OAuth de Google/Facebook/Apple (hoy son stubs con Alert "Próximamente"), pantalla de favoritos solo tiene empty state estático (no persiste favoritos), no hay pantalla "Mis publicaciones" todavía.
+**Flujo completo funcional**: registro → login → publicar (T&C + form + 3 fotos + modal) → admin aprueba → aparece en Explorar (mixto veh+prop) y en su categoría → detalle con propietario real, teléfono y WhatsApp link. Auth real con Supabase Auth, sesión persistida en AsyncStorage. Storage real: fotos suben a bucket `publicaciones`.
+
+**Funcionalidades recientes**:
+- **Favoritos funcionales**: persistencia local con AsyncStorage, queries a Supabase por IDs, corazón en todas las cards con auth gate, pantalla con FlatList + skeleton + empty state + error state + RefreshControl.
+- **Splash animado (~3.5s)**: logo SVG dibujado por fases (stroke-draw + glow + círculo verde spring + fade-out). Precarga datos del feed durante la animación.
+- **Skeleton loaders**: shimmer en Explorar, Favoritos y Categoría durante la carga (no mocks).
+- **Drawer lateral**: menú hamburguesa con 7 items, navegación a docs y cuenta, animado con Reanimated.
+- **6 documentos institucionales**: términos, privacidad, sobre nosotros, FAQ, beneficios, guía de uso seguro. Renderizados con react-native-markdown-display. Accesibles sin login.
+- **Categorías con WebP**: imágenes WebP en las píldoras de categoría (camionetas/carros 10% más grandes).
+- **Sección "¿Por qué MiLink?"**: carrusel auto-scroll con 5 beneficios y iconos propios.
+
+**Pendientes conocidos**: comprimir logo (~5 MB), conectar OAuth Google/Facebook/Apple (hoy son stubs), pantalla "Mis publicaciones", modo oscuro (no tocar aún).
+
+**TSC siempre limpio antes de commit.**
