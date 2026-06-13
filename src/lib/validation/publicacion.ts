@@ -20,6 +20,7 @@ export const COUNTRY_CODES: CountryCode[] = [
   { dial: "+56", label: "Chile", flag: "🇨🇱" },
   { dial: "+54", label: "Argentina", flag: "🇦🇷" },
   { dial: "+34", label: "España", flag: "🇪🇸" },
+  { dial: "+503", label: "El Salvador", flag: "🇸🇻" },
   { dial: "+507", label: "Panamá", flag: "🇵🇦" },
 ];
 
