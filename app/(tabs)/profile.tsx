@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useSession } from "../../src/lib/auth";
 import { esAdmin } from "../../src/lib/admins";
-import { User } from "../../src/components/icons";
+import { ChevronRight, ClipboardList, User } from "../../src/components/icons";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
 
@@ -56,6 +56,16 @@ export default function Perfil() {
         <Text className="text-muted font-quicksand-medium">{user.email}</Text>
 
         <View className="w-full mt-6 gap-3">
+          <Pressable
+            onPress={() => router.push("/mis-publicaciones")}
+            className="rounded-2xl px-5 py-4 flex-row items-center gap-3 border border-line"
+          >
+            <ClipboardList size={22} color={COLORS.accent} />
+            <Text className="flex-1 text-ink font-quicksand-semibold">
+              Mis publicaciones
+            </Text>
+            <ChevronRight size={18} color={COLORS.muted} />
+          </Pressable>
           <Pressable
             onPress={() => router.push("/publish")}
             className="bg-accent rounded-2xl px-6 py-4 items-center"

@@ -24,6 +24,7 @@ import { COLORS } from "../theme/colors";
 import { useSession } from "../lib/auth";
 import {
   ChevronRight,
+  ClipboardList,
   FileText,
   HelpCircle,
   InfoCircle,
@@ -43,6 +44,7 @@ type Props = {
 
 type ItemRuta =
   | "/(tabs)/profile"
+  | "/mis-publicaciones"
   | "/docs/sobre-nosotros"
   | "/docs/beneficios"
   | "/docs/preguntas-frecuentes"
@@ -55,10 +57,12 @@ type Item = {
   label: string;
   Icon: (p: IconProps) => React.ReactElement;
   ruta: ItemRuta;
+  soloLogueado?: boolean;
 };
 
 const ITEMS: Item[] = [
-  { id: "cuenta",     label: "Cuenta",                                          Icon: User,        ruta: "/(tabs)/profile" },
+  { id: "cuenta",     label: "Cuenta",                                          Icon: User,           ruta: "/(tabs)/profile" },
+  { id: "mis-pubs",   label: "Mis publicaciones",                               Icon: ClipboardList,  ruta: "/mis-publicaciones",         soloLogueado: true },
   { id: "sobre",      label: "Sobre nosotros",                                  Icon: InfoCircle,  ruta: "/docs/sobre-nosotros" },
   { id: "beneficios", label: "Beneficios de usar MiLink",                       Icon: Sparkles,    ruta: "/docs/beneficios" },
   { id: "faq",        label: "Preguntas frecuentes",                            Icon: HelpCircle,  ruta: "/docs/preguntas-frecuentes" },
@@ -238,7 +242,7 @@ export function DrawerMenu({ visible, onClose }: Props) {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingVertical: 6 }}
           >
-            {ITEMS.map((item) => {
+            {ITEMS.filter((item) => !item.soloLogueado || session).map((item) => {
               const Icon = item.Icon;
               return (
                 <Pressable

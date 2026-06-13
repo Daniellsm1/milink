@@ -87,6 +87,10 @@ export default function RootLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen name="docs" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="mis-publicaciones"
+              options={{ headerShown: false }}
+            />
             </Stack>
             {/* Splash animado como overlay: la app se monta detrás y sus
                 queries cargan durante los ~3.5s de animación (cold start). */}
