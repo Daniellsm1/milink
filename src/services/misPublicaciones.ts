@@ -1,6 +1,12 @@
 // Listado unificado (vehículos + propiedades) del usuario logueado, con su
 // estado de moderación. Permite al dueño ver qué publicó y en qué estado va.
 import { supabase } from "../lib/supabase";
+import type {
+  PropiedadRow,
+  PropiedadUpdate,
+  VehiculoRow,
+  VehiculoUpdate,
+} from "../types/database";
 
 export type PublicacionPropia = {
   id: string;
@@ -67,4 +73,47 @@ export async function getMisPublicaciones(
     (a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
+}
+
+// ── Edición ─────────────────────────────────────────────────
+
+export async function getVehiculoParaEditar(id: string): Promise<VehiculoRow> {
+  const { data, error } = await supabase
+    .from("vehiculos")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data as VehiculoRow;
+}
+
+export async function getPropiedadParaEditar(
+  id: string
+): Promise<PropiedadRow> {
+  const { data, error } = await supabase
+    .from("propiedades")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data as PropiedadRow;
+}
+
+export async function actualizarVehiculo(id: string, datos: VehiculoUpdate) {
+  const { error } = await supabase
+    .from("vehiculos")
+    .update({ ...datos, status: "pending_approval" })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function actualizarPropiedad(
+  id: string,
+  datos: PropiedadUpdate
+) {
+  const { error } = await supabase
+    .from("propiedades")
+    .update({ ...datos, status: "pending_approval" })
+    .eq("id", id);
+  if (error) throw error;
 }
