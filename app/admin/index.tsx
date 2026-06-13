@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -11,22 +10,16 @@ import {
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useSession } from "../../src/lib/auth";
 import { esAdmin } from "../../src/lib/admins";
 import { COLORS } from "../../src/theme/colors";
-import { Check, ChevronLeft, MapPin, X } from "../../src/components/icons";
-import {
-  aprobar,
-  listarPendientes,
-  rechazar,
-  type PendienteItem,
-} from "../../src/services/moderacion";
+import { ChevronLeft, ChevronRight, MapPin } from "../../src/components/icons";
+import { listarPendientes } from "../../src/services/moderacion";
 
 export default function AdminPanel() {
   const router = useRouter();
   const { user, loading } = useSession();
-  const queryClient = useQueryClient();
 
   const admin = esAdmin(user);
 
@@ -42,22 +35,6 @@ export default function AdminPanel() {
     queryKey: ["pendientes"],
     queryFn: listarPendientes,
     enabled: admin,
-  });
-
-  const aprobarMut = useMutation({
-    mutationFn: ({ tipo, id }: Pick<PendienteItem, "tipo" | "id">) =>
-      aprobar(tipo, id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pendientes"] }),
-    onError: (e) =>
-      Alert.alert("No se pudo aprobar", e instanceof Error ? e.message : ""),
-  });
-
-  const rechazarMut = useMutation({
-    mutationFn: ({ tipo, id }: Pick<PendienteItem, "tipo" | "id">) =>
-      rechazar(tipo, id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pendientes"] }),
-    onError: (e) =>
-      Alert.alert("No se pudo rechazar", e instanceof Error ? e.message : ""),
   });
 
   if (!user || !admin) {
@@ -120,8 +97,13 @@ export default function AdminPanel() {
           )
         }
         renderItem={({ item }) => (
-          <View
-            className="rounded-2xl bg-white border border-line overflow-hidden"
+          <Pressable
+            onPress={() =>
+              router.push(`/admin/moderar/${item.tipo}/${item.id}`)
+            }
+            accessibilityRole="button"
+            accessibilityLabel={`Moderar ${item.titulo}`}
+            className="rounded-2xl bg-white border border-line overflow-hidden active:opacity-80"
             style={{
               shadowColor: "#0F172A",
               shadowOpacity: 0.05,
@@ -130,7 +112,7 @@ export default function AdminPanel() {
               elevation: 2,
             }}
           >
-            <View className="flex-row">
+            <View className="flex-row items-center">
               {item.imagenes[0] ? (
                 <Image
                   source={item.imagenes[0]}
@@ -181,41 +163,11 @@ export default function AdminPanel() {
                   </Text>
                 </Text>
               </View>
+              <View className="pr-3">
+                <ChevronRight size={20} color={COLORS.muted} />
+              </View>
             </View>
-
-            {/* Acciones */}
-            <View className="flex-row border-t border-line">
-              <Pressable
-                onPress={() =>
-                  rechazarMut.mutate({ tipo: item.tipo, id: item.id })
-                }
-                accessibilityRole="button"
-                accessibilityLabel="Rechazar"
-                disabled={rechazarMut.isPending}
-                className="flex-1 flex-row items-center justify-center gap-1.5 py-3 active:opacity-60"
-                style={{ borderRightWidth: 1, borderRightColor: COLORS.border }}
-              >
-                <X size={16} color="#EF4444" />
-                <Text className="font-quicksand-bold text-[13px]" style={{ color: "#EF4444" }}>
-                  Rechazar
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() =>
-                  aprobarMut.mutate({ tipo: item.tipo, id: item.id })
-                }
-                accessibilityRole="button"
-                accessibilityLabel="Aprobar"
-                disabled={aprobarMut.isPending}
-                className="flex-1 flex-row items-center justify-center gap-1.5 py-3 active:opacity-60"
-              >
-                <Check size={16} color={COLORS.accent} />
-                <Text className="font-quicksand-bold text-[13px] text-accent">
-                  Aprobar
-                </Text>
-              </Pressable>
-            </View>
-          </View>
+          </Pressable>
         )}
       />
     </SafeAreaView>
