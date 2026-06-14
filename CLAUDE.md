@@ -29,6 +29,7 @@ admin** antes de aparecer en el feed público.
 | Iconos | `react-native-svg` (vector propio) | 15.12.1 |
 | Imágenes | `expo-image` + `expo-image-picker` + `expo-image-manipulator` | ✓ |
 | Blur | `expo-blur` | ~15.0.8 |
+| Gradientes | `expo-linear-gradient` (módulo nativo, no SVG) | ~15.0.8 |
 | Fuente | Quicksand (`@expo-google-fonts/quicksand`) | 0.4.1 |
 | Schemas | Zod | 4.4.3 |
 | Markdown docs | `react-native-markdown-display` | ✓ |
@@ -99,8 +100,15 @@ app/                            # Expo Router (rutas)
 │   ├── preguntas-frecuentes.tsx
 │   ├── beneficios.tsx
 │   └── guia-uso-seguro.tsx     # Cada una renderiza <MarkdownDoc source={require(...)} />
+├── mis-publicaciones/
+│   ├── _layout.tsx             # Stack con header nativo (mismo estilo que docs)
+│   ├── index.tsx               # Listado de publicaciones propias + badges status
+│   └── editar/
+│       └── [tipo]/[id].tsx     # Form edición unificado veh/prop (precarga + upload selectivo)
 └── admin/
-    └── index.tsx               # Panel de moderación (gated por correo)
+    ├── index.tsx               # Panel de moderación (gated por correo, cards navegan)
+    └── moderar/
+        └── [tipo]/[id].tsx     # Detalle moderación: carrusel fotos + campos + WhatsApp + aprobar/rechazar
 
 src/
 ├── components/
@@ -112,14 +120,14 @@ src/
 │   ├── SectionHeader.tsx       # Props: title, action?, onAction?, hideAction?
 │   ├── NewArrivalsCarousel.tsx # Auto-scroll cada 2.5s con pausa por drag
 │   ├── NewArrivalCard.tsx
-│   ├── BeneficiosCarousel.tsx  # Auto-scroll 3s, 5 cards con iconos propios
+│   ├── BeneficiosCarousel.tsx  # Scroll manual + peek + gradiente Atardecer (expo-linear-gradient)
 │   ├── CategoryPill.tsx        # Usa imágenes WebP (no SVG icons)
 │   ├── VehicleCard.tsx         # Con corazón favorito (sibling, no hijo)
 │   ├── PropiedadCard.tsx       # Con corazón favorito (sibling, no hijo)
 │   ├── DrawerMenu.tsx          # Modal transparent + Reanimated translateX
 │   ├── MarkdownDoc.tsx         # expo-asset + fetch(uri) para .md
 │   ├── Skeleton.tsx            # Base shimmer con Reanimated (bg-line)
-│   ├── skeletons.tsx           # ExplorerSkeleton, FavoritesSkeleton, CategoriaSkeleton
+│   ├── skeletons.tsx           # ExplorerSkeleton, FavoritesSkeleton, CategoriaSkeleton, MisPublicacionesSkeleton
 │   ├── SplashScreen.tsx        # Logo SVG animado (stroke-draw + glow + círculo verde)
 │   ├── EmptyFavoritesIllustration.tsx
 │   ├── FiltrosSheet.tsx        # BottomSheet con mode "vehiculo" | "propiedad"
@@ -128,7 +136,8 @@ src/
 │       ├── FormInput.tsx
 │       ├── FormSelect.tsx
 │       ├── FormToggle.tsx
-│       ├── PhotoPicker.tsx     # Exactamente 3 fotos
+│       ├── PhotoPicker.tsx     # Exactamente 3 fotos (creación)
+│       ├── PhotoPickerEdit.tsx # 3 slots con discriminated union { existente | nueva } (edición)
 │       └── CountryCodeSelect.tsx
 ├── content/
 │   └── terminosPublicacion.ts  # T&C estructurados (espejo del .md de assets)
@@ -146,7 +155,8 @@ src/
 │   ├── storage.ts              # subirImagenes() — base64 → Storage 'publicaciones'
 │   ├── publicaciones.ts        # crearVehiculo, crearPropiedad, getUsuarioActual()
 │   ├── feed.ts                 # listar*Aprobados, listarMixtoAprobado, listarNuevasEntradas, listar*PorIds
-│   └── moderacion.ts           # listarPendientes, aprobar, rechazar
+│   ├── moderacion.ts           # listarPendientes, aprobar, rechazar
+│   └── misPublicaciones.ts     # getMisPublicaciones, get/actualizarVehiculo|Propiedad (edición)
 ├── theme/
 │   └── colors.ts               # COLORS y FONTS tokens
 └── types/
@@ -188,7 +198,10 @@ metro.config.js                 # Extiende Expo default + NativeWind CSS + .md e
 | `/vehicle/[id]` | Detalle (veh **o** propiedad) | Tarjetas feed, carrusel, panel admin |
 | `/categoria/[key]` | Listado por categoría | Píldoras de "Categorías" en Explorar |
 | `/docs/*` | 6 pantallas de documentos institucionales | Drawer lateral (accesibles sin login) |
-| `/admin` | Panel de moderación | Perfil (solo si `esAdmin(user)`) |
+| `/mis-publicaciones` | Listado de publicaciones propias con badges de status | Perfil / Drawer (solo logueado) |
+| `/mis-publicaciones/editar/[tipo]/[id]` | Form edición unificado veh/prop | Botón "Editar" en card aprobada/rechazada |
+| `/admin` | Panel de moderación (listado pendientes) | Perfil (solo si `esAdmin(user)`) |
+| `/admin/moderar/[tipo]/[id]` | Detalle moderación con fotos+campos+WhatsApp+aprobar/rechazar | Tap en card del listado admin |
 
 ---
 
@@ -202,7 +215,8 @@ metro.config.js                 # Extiende Expo default + NativeWind CSS + .md e
 - **Prefetch en splash**: `queryClient.prefetchQuery` de `nuevas-entradas` y `mixto-aprobado` en `_layout.tsx` `useEffect`. TanStack deduplica si Explorar lanza las mismas queries.
 - **Skeleton loaders**: `Skeleton` base con shimmer Reanimated (`bg-line`, barra blanca op 0.3, `withRepeat(withTiming(1200ms), -1)`). Tres variantes: `ExplorerSkeleton` (carrusel + píldoras + grid), `FavoritesSkeleton` (4 cards), `CategoriaSkeleton` (6 cards). En Explorar: skeleton durante `isLoading`, mocks solo como fallback post-carga vacía.
 - **CategoryPill con WebP**: imágenes WebP en vez de iconos SVG dentro de las píldoras de categoría. `CATEGORY_IMAGES` con `require()`. camionetas/carros son 10% más grandes via `CATEGORY_IMAGE_SIZE`.
-- **Carrusel "Nuevas entradas"** auto-scroll cada 2.5s con `scrollToOffset` (más fiable que `scrollToIndex`). Pausa cuando el usuario arrastra (`userDraggingRef`). **BeneficiosCarousel** replica el mismo patrón (auto-scroll 3s, 5 cards hardcoded).
+- **Carrusel "Nuevas entradas"** auto-scroll cada 2.5s con `scrollToOffset` (más fiable que `scrollToIndex`). Pausa cuando el usuario arrastra (`userDraggingRef`).
+- **BeneficiosCarousel** (rediseñado): scroll **manual** (sin auto-scroll), efecto **peek** (cards vecinas asomadas ~15% por lado, `cardWidth = min(width*0.70, 290)`), coverflow con Reanimated (`scale [0.85, 1, 0.85]`, `opacity [0.55, 1, 0.55]`). Fondo gradiente diagonal **"Atardecer"** (ámbar `#FBBF24` → coral `#FB7185`) con `expo-linear-gradient` (módulo nativo, evita el bug de SVG en Android). Card en dos capas: externa (sombra/elevation con `backgroundColor:#fff`) + interna (`overflow:hidden`, gradiente).
 - **Drawer lateral**: `Modal transparent` + Reanimated `useSharedValue` para `translateX` y `overlayOpacity` (280ms, `Easing.out(cubic)`). Ancho: `min(80% viewport, 320)`. Header con avatar+inicial (logueado) o logo (anon). 7 items de navegación + logout rojo. `goTo(ruta)` cierra drawer + `setTimeout(router.push, 280)`.
 - **Documentos institucionales**: 6 pantallas bajo `/docs/`, cada una renderiza `<MarkdownDoc source={require(...)} />`. `MarkdownDoc` usa `expo-asset` + `fetch(asset.localUri ?? asset.uri)` para cargar texto (NO `FileSystem.readAsStringAsync`, deprecado en SDK 54). Accesibles sin login.
 - **Detalle async + hero**: `fetchDetalleById` busca mocks → `vehiculos` → `propiedades`. Animación de entrada con Reanimated `Keyframe` en wrapper interno.
@@ -212,6 +226,8 @@ metro.config.js                 # Extiende Expo default + NativeWind CSS + .md e
 - **`auth.users` NO es legible desde el cliente**. `nombre_propietario` denormalizado en `vehiculos`/`propiedades`.
 - **Admin** gated por correo en `src/lib/admins.ts` + `public.es_admin()` en RLS.
 - **Corazón favorito como sibling**: en `VehicleCard`/`PropiedadCard` el `Pressable` del corazón es hermano (no hijo) del `Pressable` de la card, para evitar `<button>` anidados en web.
+- **"Mis publicaciones" + edición unificada**: una sola pantalla `editar/[tipo]/[id]` sirve a vehículos y propiedades. Reusa los Zod schemas y los componentes de `src/components/form/`. `PhotoPickerEdit` usa discriminated union `{ tipo: "existente"; url } | { tipo: "nueva"; uri }` para subir **solo las fotos nuevas** vía `subirImagenes(userId, tipoPlural, uris)`. Al guardar, el service inyecta `status: "pending_approval"` y la query del listado se invalida (`["mis-publicaciones", userId]`). Teléfono parseado con regex `/^(\+\d{1,3})(\d+)$/` para precargar `indicativo` + `telefono`.
+- **Detalle moderación admin**: el listado `/admin` ya no tiene botones inline — cada card navega a `/admin/moderar/[tipo]/[id]`. La pantalla de detalle muestra carrusel paginado de todas las fotos, todos los campos con componente `Campo({ label, value })`, bloque destacado de teléfono con botón **WhatsApp** (`Linking.openURL(\`https://wa.me/${tel}\`)`), y botones aprobar/rechazar con `useMutation` que invalida `["pendientes"]`.
 
 ---
 
@@ -290,6 +306,7 @@ eas build --profile development --platform android  # Build de desarrollo
 12. **`FileSystem.readAsStringAsync` deprecado en SDK 54**: usar `fetch(asset.localUri ?? asset.uri)` para cargar archivos .md.
 13. **`icono1.svg` inutilizable**: SVG auto-traced de 1,889 paths (1.9MB). Queda en el repo como referencia; el splash usa logo redibujado a mano.
 14. **`react-native-markdown-display` + React 19**: requiere `--legacy-peer-deps`. Después de instalarlo, verificar que `react-native-worklets` sigue presente.
+15. **Gradientes SVG en Android se fragmentan**: combinar `<Svg viewBox + preserveAspectRatio="none">` con `<LinearGradient>` (cualquier modo: `userSpaceOnUse` u `objectBoundingBox`) renderiza el gradiente en **bloques sólidos** en Android (Skia ignora la deformación del viewBox al calcular los stops). En web sí queda continuo. **Solución:** `expo-linear-gradient` (módulo nativo: Android `android.graphics.LinearGradient`, iOS `CAGradientLayer`, web `linear-gradient` CSS). Como agrega código nativo, **requiere rebuild del dev-client** (`eas build --profile development --platform android`), no basta con `--clear`.
 
 ---
 
@@ -319,19 +336,23 @@ Editar `src/components/icons.tsx`: Stroke (`Stroke` wrapper) para lineales, Fill
 
 ---
 
-## Estado actual (snapshot junio 2025)
+## Estado actual (snapshot junio 2026)
 
-**Flujo completo funcional**: registro → login → publicar (T&C + form + 3 fotos + modal) → admin aprueba → aparece en Explorar (mixto veh+prop) y en su categoría → detalle con propietario real, teléfono y WhatsApp link. Auth real con Supabase Auth, sesión persistida en AsyncStorage. Storage real: fotos suben a bucket `publicaciones`.
+**Flujo completo funcional**: registro → login → publicar (T&C + form + 3 fotos + modal) → admin aprueba/rechaza desde detalle de moderación → aparece en Explorar (mixto veh+prop) y en su categoría → detalle con propietario real, teléfono y WhatsApp link. El dueño ve sus publicaciones en "Mis publicaciones" con badge de estado y puede editarlas (vuelven a `pending_approval`). Auth real con Supabase Auth, sesión persistida en AsyncStorage. Storage real: fotos suben a bucket `publicaciones`.
 
 **Funcionalidades recientes**:
+- **"Mis publicaciones"**: listado del dueño con badges (En revisión / Aprobada / Rechazada) + form unificado de edición para vehículo y propiedad (precarga datos, sube solo fotos nuevas, status → pending_approval). Accesible desde Perfil y Drawer.
+- **Detalle de moderación admin**: carrusel de todas las fotos, todos los campos del formulario, bloque de teléfono con botón WhatsApp, botones aprobar/rechazar. Listado admin pasó a ser solo navegación (card → detalle), sin botones inline.
+- **BeneficiosCarousel rediseñado**: gradiente diagonal "Atardecer" (ámbar → coral) con `expo-linear-gradient` + peek manual (sin auto-scroll) que muestra las cards vecinas asomadas para invitar a deslizar.
+- **Header de Explorar**: reorganizado — izquierda logo+texto "Milink", derecha corazón Favoritos + menú hamburguesa.
+- **Selector país**: +503 El Salvador agregado entre España y Panamá.
 - **Favoritos funcionales**: persistencia local con AsyncStorage, queries a Supabase por IDs, corazón en todas las cards con auth gate, pantalla con FlatList + skeleton + empty state + error state + RefreshControl.
 - **Splash animado (~3.5s)**: logo SVG dibujado por fases (stroke-draw + glow + círculo verde spring + fade-out). Precarga datos del feed durante la animación.
-- **Skeleton loaders**: shimmer en Explorar, Favoritos y Categoría durante la carga (no mocks).
-- **Drawer lateral**: menú hamburguesa con 7 items, navegación a docs y cuenta, animado con Reanimated.
+- **Skeleton loaders**: shimmer en Explorar, Favoritos, Categoría y Mis publicaciones (no mocks).
+- **Drawer lateral**: menú hamburguesa con navegación a docs y cuenta (incluye "Mis publicaciones"), animado con Reanimated.
 - **6 documentos institucionales**: términos, privacidad, sobre nosotros, FAQ, beneficios, guía de uso seguro. Renderizados con react-native-markdown-display. Accesibles sin login.
 - **Categorías con WebP**: imágenes WebP en las píldoras de categoría (camionetas/carros 10% más grandes).
-- **Sección "¿Por qué MiLink?"**: carrusel auto-scroll con 5 beneficios y iconos propios.
 
-**Pendientes conocidos**: comprimir logo (~5 MB), conectar OAuth Google/Facebook/Apple (hoy son stubs), pantalla "Mis publicaciones", modo oscuro (no tocar aún).
+**Pendientes conocidos**: comprimir logo (~5 MB), conectar OAuth Google/Facebook/Apple (hoy son stubs), modo oscuro (no tocar aún).
 
 **TSC siempre limpio antes de commit.**
