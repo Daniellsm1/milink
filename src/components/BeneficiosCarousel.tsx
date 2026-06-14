@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useRef } from "react";
-import {
-  FlatList,
-  Text,
-  View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from "react-native";
+import { Text, View, StyleSheet, useWindowDimensions } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+  type SharedValue,
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   BadgeDolar,
   ShieldCheck,
@@ -60,100 +62,149 @@ const BENEFICIOS: Beneficio[] = [
   },
 ];
 
-const CARD_WIDTH = 260;
-const GAP = 12;
-const STEP = CARD_WIDTH + GAP;
-const INTERVAL_MS = 3000;
+const CARD_MARGIN = 8;
 
-function BeneficioCard({ item }: { item: Beneficio }) {
+// Paleta "Atardecer": dos colores que contrastan (ámbar → coral). Hace que el
+// ícono esmeralda resalte por contraste complementario y mantiene legible el
+// texto oscuro encima.
+const GRAD_INICIO = "#FBBF24"; // ámbar
+const GRAD_FIN = "#FB7185"; // coral / rosa
+
+// Fondo gradiente diagonal con expo-linear-gradient (módulo nativo:
+// Android usa android.graphics.LinearGradient, iOS usa CAGradientLayer,
+// web usa CSS linear-gradient). Continuo en todas las plataformas.
+// react-native-svg renderiza gradientes en bloques en Android cuando se
+// combina viewBox + preserveAspectRatio="none", por eso evitamos SVG.
+function GradientBackground() {
+  return (
+    <LinearGradient
+      colors={[GRAD_INICIO, GRAD_FIN]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={StyleSheet.absoluteFill}
+    />
+  );
+}
+
+function BeneficioCard({
+  item,
+  cardWidth,
+}: {
+  item: Beneficio;
+  cardWidth: number;
+}) {
   const Icon = item.Icon;
   return (
+    // Capa externa: sombra/elevation sobre fondo sólido (sin overflow), para que
+    // en Android la sombra se pinte limpia y no genere el marco gris.
     <View
       style={{
-        width: CARD_WIDTH,
-        backgroundColor: COLORS.categoryBg,
-        borderColor: COLORS.border,
-        borderWidth: 1,
-        borderRadius: 20,
-        padding: 20,
-        alignItems: "center",
+        width: cardWidth,
+        marginHorizontal: CARD_MARGIN,
+        borderRadius: 16,
+        backgroundColor: "#FFFFFF",
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 3 },
+        elevation: 3,
       }}
     >
-      <Icon size={56} color={COLORS.accent} />
-      <Text className="font-quicksand-bold text-[16px] text-ink text-center mt-3">
-        {item.titulo}
-      </Text>
-      <Text
-        className="font-quicksand text-[13px] text-muted text-center mt-1.5 leading-5"
-        numberOfLines={3}
+      {/* Capa interna: recorta el gradiente a las esquinas redondeadas. */}
+      <View
+        style={{
+          borderRadius: 16,
+          overflow: "hidden",
+          borderWidth: 1,
+          borderColor: "rgba(255,255,255,0.8)",
+          backgroundColor: GRAD_INICIO,
+          padding: 20,
+          alignItems: "center",
+        }}
       >
-        {item.descripcion}
-      </Text>
+        <GradientBackground />
+        <Icon size={56} color={COLORS.accent} />
+        <Text className="font-quicksand-bold text-[16px] text-ink text-center mt-3">
+          {item.titulo}
+        </Text>
+        <Text
+          className="font-quicksand text-[13px] text-center mt-1.5 leading-5"
+          style={{ color: COLORS.text, opacity: 0.7 }}
+          numberOfLines={3}
+        >
+          {item.descripcion}
+        </Text>
+      </View>
     </View>
   );
 }
 
+function CoverflowCard({
+  index,
+  scrollX,
+  step,
+  children,
+}: {
+  index: number;
+  scrollX: SharedValue<number>;
+  step: number;
+  children: React.ReactNode;
+}) {
+  const animStyle = useAnimatedStyle(() => {
+    const inputRange = [(index - 1) * step, index * step, (index + 1) * step];
+    // Vecinas más chicas y atenuadas: se leen como "fondo" para invitar a
+    // deslizar. Centro a tamaño natural para no tapar el peek de los lados.
+    const scale = interpolate(
+      scrollX.value,
+      inputRange,
+      [0.85, 1, 0.85],
+      Extrapolation.CLAMP
+    );
+    const opacity = interpolate(
+      scrollX.value,
+      inputRange,
+      [0.55, 1, 0.55],
+      Extrapolation.CLAMP
+    );
+    return { transform: [{ scale }], opacity };
+  });
+
+  return <Animated.View style={animStyle}>{children}</Animated.View>;
+}
+
 export function BeneficiosCarousel() {
-  const listRef = useRef<FlatList<Beneficio>>(null);
-  const indexRef = useRef(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const userDraggingRef = useRef(false);
+  const { width } = useWindowDimensions();
+  const scrollX = useSharedValue(0);
 
-  const stop = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  }, []);
+  // La card activa ocupa ~70% del ancho → deja ~15% por lado para asomar las
+  // cards vecinas (efecto peek que invita a deslizar).
+  const cardWidth = Math.min(width * 0.7, 290);
+  const step = cardWidth + CARD_MARGIN * 2;
 
-  const start = useCallback(() => {
-    stop();
-    if (BENEFICIOS.length <= 1) return;
-    timerRef.current = setInterval(() => {
-      const next =
-        indexRef.current >= BENEFICIOS.length - 1 ? 0 : indexRef.current + 1;
-      indexRef.current = next;
-      listRef.current?.scrollToOffset({
-        offset: next * STEP,
-        animated: true,
-      });
-    }, INTERVAL_MS);
-  }, [stop]);
-
-  useEffect(() => {
-    indexRef.current = 0;
-    start();
-    return stop;
-  }, [start, stop]);
-
-  const onMomentumScrollEnd = (
-    e: NativeSyntheticEvent<NativeScrollEvent>
-  ) => {
-    if (!userDraggingRef.current) return;
-    userDraggingRef.current = false;
-    const offsetX = e.nativeEvent.contentOffset.x;
-    indexRef.current = Math.max(0, Math.round(offsetX / STEP));
-  };
-
-  const onBeginDrag = () => {
-    userDraggingRef.current = true;
-    stop();
-  };
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollX.value = event.contentOffset.x;
+    },
+  });
 
   return (
-    <FlatList
-      ref={listRef}
+    <Animated.ScrollView
       horizontal
-      data={BENEFICIOS}
-      keyExtractor={(item) => item.id}
       showsHorizontalScrollIndicator={false}
-      snapToInterval={STEP}
+      snapToInterval={step}
       decelerationRate="fast"
-      contentContainerStyle={{ paddingHorizontal: 20, gap: GAP }}
-      onScrollBeginDrag={onBeginDrag}
-      onScrollEndDrag={start}
-      onMomentumScrollEnd={onMomentumScrollEnd}
-      renderItem={({ item }) => <BeneficioCard item={item} />}
-    />
+      contentContainerStyle={{
+        paddingHorizontal: (width - step) / 2,
+        paddingVertical: 20,
+      }}
+      onScroll={scrollHandler}
+      scrollEventThrottle={16}
+    >
+      {BENEFICIOS.map((item, index) => (
+        <CoverflowCard key={item.id} index={index} scrollX={scrollX} step={step}>
+          <BeneficioCard item={item} cardWidth={cardWidth} />
+        </CoverflowCard>
+      ))}
+    </Animated.ScrollView>
   );
 }

@@ -136,12 +136,6 @@ export default function Explorar() {
             <View className="px-5 pt-3 pb-4">
               <View className="flex-row items-center justify-between mb-4">
                 <View className="flex-row items-center gap-2.5">
-                  <HeaderIconButton
-                    label="Menú"
-                    onPress={() => setDrawerOpen(true)}
-                  >
-                    <Menu size={20} color={COLORS.text} />
-                  </HeaderIconButton>
                   <Image
                     source={require("../../assets/milink-icon.png")}
                     style={{ width: 40, height: 40, borderRadius: 12 }}
@@ -151,12 +145,20 @@ export default function Explorar() {
                     Milink
                   </Text>
                 </View>
-                <HeaderIconButton
-                  label="Favoritos"
-                  onPress={() => router.push("/(tabs)/favorites")}
-                >
-                  <Heart size={17} color={COLORS.text} />
-                </HeaderIconButton>
+                <View className="flex-row items-center gap-2.5">
+                  <HeaderIconButton
+                    label="Favoritos"
+                    onPress={() => router.push("/(tabs)/favorites")}
+                  >
+                    <Heart size={17} color={COLORS.text} />
+                  </HeaderIconButton>
+                  <HeaderIconButton
+                    label="Menú"
+                    onPress={() => setDrawerOpen(true)}
+                  >
+                    <Menu size={20} color={COLORS.text} />
+                  </HeaderIconButton>
+                </View>
               </View>
               <SearchBar />
             </View>
