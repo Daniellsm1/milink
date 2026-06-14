@@ -165,6 +165,26 @@ export type ResenaInsert = Omit<
 
 export type ResenaUpdate = Partial<ResenaInsert>;
 
+// ─── Administración de usuarios (RPCs admin_*) ─────────────────────────
+export type PublicacionResumen = {
+  id: string;
+  tipo: "vehiculo" | "propiedad";
+  categoria: string;
+  resumen: string;
+  created_at: string;
+  status: PublicacionStatus;
+};
+
+export type UsuarioRegistrado = {
+  id: string;
+  email: string;
+  nombre: string;
+  telefono: string;
+  created_at: string;
+  total_publicaciones: number;
+  publicaciones: PublicacionResumen[];
+};
+
 // Forma compatible con supabase-js (createClient<Database>())
 export type Database = {
   public: {
@@ -189,7 +209,16 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      admin_listar_usuarios: {
+        Args: Record<string, never>;
+        Returns: UsuarioRegistrado[];
+      };
+      admin_eliminar_usuario: {
+        Args: { p_user_id: string };
+        Returns: undefined;
+      };
+    };
     Enums: {
       transmision_tipo: TransmisionTipo;
       combustible_tipo: CombustibleTipo;

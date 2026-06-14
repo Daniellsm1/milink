@@ -127,3 +127,25 @@ export function MisPublicacionesSkeleton() {
     </View>
   );
 }
+
+/** Skeleton de Usuarios registrados: 4 cards con avatar + 2 líneas de texto. */
+export function UsuariosSkeleton() {
+  return (
+    <View style={{ paddingTop: 16, paddingHorizontal: 16, gap: 12 }}>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <View
+          key={i}
+          className="flex-row items-center bg-white border border-line rounded-2xl p-4"
+          style={{ gap: 12 }}
+        >
+          <Skeleton width={48} height={48} borderRadius={24} />
+          <View style={{ flex: 1, gap: 8 }}>
+            <Skeleton width="55%" height={15} />
+            <Skeleton width="75%" height={12} />
+          </View>
+          <Skeleton width={44} height={44} borderRadius={12} />
+        </View>
+      ))}
+    </View>
+  );
+}

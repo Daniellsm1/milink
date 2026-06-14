@@ -83,6 +83,7 @@ export default function RootLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen name="admin/moderar/[tipo]/[id]" />
+            <Stack.Screen name="admin/usuarios" />
             <Stack.Screen
               name="categoria/[key]"
               options={{ headerShown: false }}

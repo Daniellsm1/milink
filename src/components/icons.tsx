@@ -141,6 +141,22 @@ export const ChevronDown = (p: IconProps) => (
   </Stroke>
 );
 
+export const ChevronUp = (p: IconProps) => (
+  <Stroke {...p}>
+    <Polyline points="18 15 12 9 6 15" />
+  </Stroke>
+);
+
+export const Trash = (p: IconProps) => (
+  <Stroke {...p}>
+    <Path d="M3 6h18" />
+    <Path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <Path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+    <Line x1="10" y1="11" x2="10" y2="17" />
+    <Line x1="14" y1="11" x2="14" y2="17" />
+  </Stroke>
+);
+
 export const Mail = (p: IconProps) => (
   <Stroke {...p}>
     <Rect x="2" y="4" width="20" height="16" rx="2" />

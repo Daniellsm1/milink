@@ -3,7 +3,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useSession } from "../../src/lib/auth";
 import { esAdmin } from "../../src/lib/admins";
-import { ChevronRight, ClipboardList, User } from "../../src/components/icons";
+import {
+  ChevronRight,
+  ClipboardList,
+  User,
+  Users,
+} from "../../src/components/icons";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
 
@@ -83,6 +88,19 @@ export default function Perfil() {
               <Text className="text-accent font-quicksand-bold">
                 Panel de moderación
               </Text>
+            </Pressable>
+          ) : null}
+          {esAdmin(user) ? (
+            <Pressable
+              onPress={() => router.push("/admin/usuarios")}
+              className="rounded-2xl px-5 py-4 flex-row items-center gap-3 border-2"
+              style={{ borderColor: COLORS.accent }}
+            >
+              <Users size={22} color={COLORS.accent} />
+              <Text className="flex-1 text-accent font-quicksand-bold">
+                Usuarios registrados
+              </Text>
+              <ChevronRight size={18} color={COLORS.accent} />
             </Pressable>
           ) : null}
           <Pressable
