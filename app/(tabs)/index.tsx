@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { SearchBar } from "../../src/components/SearchBar";
 import { SectionHeader } from "../../src/components/SectionHeader";
 import { NewArrivalsCarousel } from "../../src/components/NewArrivalsCarousel";
@@ -19,6 +19,7 @@ import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
 import { CATEGORIAS, DISPONIBLES, NUEVAS } from "../../src/data/mock";
 import {
+  buscarMixto,
   listarMixtoAprobado,
   listarNuevasEntradas,
   listarVehiculosAprobados,
@@ -56,6 +57,14 @@ export default function Explorar() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Búsqueda libre: input inmediato + valor debounced (350ms) para la query.
+  const [busquedaInput, setBusquedaInput] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setBusqueda(busquedaInput.trim()), 350);
+    return () => clearTimeout(t);
+  }, [busquedaInput]);
+
   const filtrosActivos = useMemo(
     () =>
       Object.values(filtros).filter((v) => v != null && v !== "").length,
@@ -87,6 +96,16 @@ export default function Explorar() {
     enabled: filtrosActivos > 0,
   });
 
+  // Búsqueda libre sobre el feed mixto (server-side, separada de filtros).
+  const buscando = busqueda.length > 0;
+  const busquedaQuery = useQuery({
+    queryKey: ["busqueda-mixta", busqueda],
+    queryFn: () => buscarMixto(busqueda, 40),
+    staleTime: 30_000,
+    enabled: buscando,
+    placeholderData: keepPreviousData,
+  });
+
   // Mientras cargan las queries iniciales mostramos skeletons (no mocks).
   const cargandoExplorar =
     filtrosActivos === 0 && (mixtoQuery.isLoading || nuevasQuery.isLoading);
@@ -94,6 +113,7 @@ export default function Explorar() {
   // Lista final de cards mixtas. Si no hay filtros y la consulta mixta terminó
   // vacía, caemos a los mocks (vehículos) para que la pantalla no quede vacía.
   const disponibles: DisponibleMixto[] = useMemo(() => {
+    if (buscando) return busquedaQuery.data ?? [];
     if (filtrosActivos > 0) {
       return (filtradosQuery.data ?? []).map((v) => ({
         kind: "vehiculo",
@@ -104,7 +124,14 @@ export default function Explorar() {
     const mixto = mixtoQuery.data ?? [];
     if (mixto.length > 0) return mixto;
     return DISPONIBLES.map((v) => ({ kind: "vehiculo", data: v }));
-  }, [filtrosActivos, cargandoExplorar, filtradosQuery.data, mixtoQuery.data]);
+  }, [
+    buscando,
+    busquedaQuery.data,
+    filtrosActivos,
+    cargandoExplorar,
+    filtradosQuery.data,
+    mixtoQuery.data,
+  ]);
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-bg">
@@ -160,12 +187,21 @@ export default function Explorar() {
                   </HeaderIconButton>
                 </View>
               </View>
-              <SearchBar />
+              <SearchBar
+                value={busquedaInput}
+                onChangeText={setBusquedaInput}
+                onSubmit={() => setBusqueda(busquedaInput.trim())}
+              />
             </View>
 
             {cargandoExplorar ? (
               // Skeletons mientras cargan las queries iniciales
               <ExplorerSkeleton />
+            ) : buscando ? (
+              <SectionHeader
+                title={`Resultados para "${busqueda}"`}
+                hideAction
+              />
             ) : (
               <View>
                 {/* Nuevas entradas */}
@@ -209,8 +245,20 @@ export default function Explorar() {
             )}
           </View>
         }
+        ListEmptyComponent={
+          buscando && !busquedaQuery.isFetching && disponibles.length === 0 ? (
+            <View className="items-center mt-20 px-6">
+              <Text className="font-quicksand-bold text-[16px] text-ink text-center">
+                No encontramos resultados
+              </Text>
+              <Text className="text-[13px] text-muted font-quicksand-medium text-center mt-1">
+                Intenta con otro nombre, marca o ciudad.
+              </Text>
+            </View>
+          ) : null
+        }
         ListFooterComponent={
-          cargandoExplorar ? null : (
+          cargandoExplorar || buscando ? null : (
             <View className="pt-6 pb-2">
               <SectionHeader title="¿Por qué MiLink?" hideAction />
               <BeneficiosCarousel />

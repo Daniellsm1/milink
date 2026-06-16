@@ -4,8 +4,10 @@ import { supabase } from "../lib/supabase";
 import type { Disponible, NuevaEntrada } from "../data/mock";
 import type {
   CombustibleTipo,
+  PropiedadRow,
   PropiedadTipo,
   VehiculoCategoria,
+  VehiculoRow,
 } from "../types/database";
 
 // ── Filtros de vehículos ─────────────────────────────────────────────
@@ -17,6 +19,44 @@ export type FiltrosVehiculo = {
   precioMin?: number;
   precioMax?: number;
 };
+
+type VehiculoRowSeleccionado = Pick<
+  VehiculoRow,
+  | "id"
+  | "marca"
+  | "modelo"
+  | "precio_alquiler_diario"
+  | "ciudad_entrega_principal"
+  | "ciudad_entrega_opcional"
+  | "tipo_combustible"
+  | "numero_sillas"
+  | "transmision"
+  | "imagenes"
+>;
+
+function mapVehiculoRow(row: VehiculoRowSeleccionado): Disponible {
+  const fuel: Disponible["fuel"] =
+    row.tipo_combustible === "electrico"
+      ? "Eléctrico"
+      : row.tipo_combustible === "hibrido"
+      ? "Híbrido"
+      : "Gasolina";
+  const trans: Disponible["trans"] =
+    row.transmision === "automatico" ? "Automático" : "Manual";
+
+  return {
+    id: row.id,
+    brand: row.marca,
+    model: row.modelo,
+    price: row.precio_alquiler_diario.toLocaleString("es-CO"),
+    loc: row.ciudad_entrega_principal,
+    locOpcional: row.ciudad_entrega_opcional ?? undefined,
+    fuel,
+    seats: String(row.numero_sillas ?? 5),
+    trans,
+    img: row.imagenes?.[0] ?? "",
+  };
+}
 
 /** Trae los últimos vehículos aprobados (con filtros opcionales). */
 export async function listarVehiculosAprobados(
@@ -45,29 +85,7 @@ export async function listarVehiculosAprobados(
     .limit(limit);
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map((row): Disponible => {
-    const fuel: Disponible["fuel"] =
-      row.tipo_combustible === "electrico"
-        ? "Eléctrico"
-        : row.tipo_combustible === "hibrido"
-        ? "Híbrido"
-        : "Gasolina";
-    const trans: Disponible["trans"] =
-      row.transmision === "automatico" ? "Automático" : "Manual";
-
-    return {
-      id: row.id,
-      brand: row.marca,
-      model: row.modelo,
-      price: row.precio_alquiler_diario.toLocaleString("es-CO"),
-      loc: row.ciudad_entrega_principal,
-      locOpcional: row.ciudad_entrega_opcional ?? undefined,
-      fuel,
-      seats: String(row.numero_sillas ?? 5),
-      trans,
-      img: row.imagenes?.[0] ?? "",
-    };
-  });
+  return (data ?? []).map(mapVehiculoRow);
 }
 
 /** Trae vehículos aprobados por una lista de IDs (para la pantalla Favoritos). */
@@ -84,29 +102,7 @@ export async function listarVehiculosPorIds(
     .in("id", ids);
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map((row): Disponible => {
-    const fuel: Disponible["fuel"] =
-      row.tipo_combustible === "electrico"
-        ? "Eléctrico"
-        : row.tipo_combustible === "hibrido"
-        ? "Híbrido"
-        : "Gasolina";
-    const trans: Disponible["trans"] =
-      row.transmision === "automatico" ? "Automático" : "Manual";
-
-    return {
-      id: row.id,
-      brand: row.marca,
-      model: row.modelo,
-      price: row.precio_alquiler_diario.toLocaleString("es-CO"),
-      loc: row.ciudad_entrega_principal,
-      locOpcional: row.ciudad_entrega_opcional ?? undefined,
-      fuel,
-      seats: String(row.numero_sillas ?? 5),
-      trans,
-      img: row.imagenes?.[0] ?? "",
-    };
-  });
+  return (data ?? []).map(mapVehiculoRow);
 }
 
 // ── Filtros de propiedades ───────────────────────────────────────────
@@ -129,6 +125,33 @@ export type PropiedadListado = {
   imagen: string;
   tipo: PropiedadTipo;
 };
+
+type PropiedadRowSeleccionado = Pick<
+  PropiedadRow,
+  | "id"
+  | "titulo"
+  | "ciudad_municipio"
+  | "departamento"
+  | "precio_alquiler_diario"
+  | "capacidad_huespedes"
+  | "numero_habitaciones"
+  | "imagenes"
+  | "tipo_propiedad"
+>;
+
+function mapPropiedadRow(row: PropiedadRowSeleccionado): PropiedadListado {
+  return {
+    id: row.id,
+    titulo: row.titulo,
+    ciudad: row.ciudad_municipio,
+    departamento: row.departamento,
+    precio: row.precio_alquiler_diario.toLocaleString("es-CO"),
+    capacidad: row.capacidad_huespedes,
+    habitaciones: row.numero_habitaciones,
+    imagen: row.imagenes?.[0] ?? "",
+    tipo: row.tipo_propiedad,
+  };
+}
 
 export async function listarPropiedadesAprobadas(
   filtros: FiltrosPropiedad = {},
@@ -156,19 +179,7 @@ export async function listarPropiedadesAprobadas(
     .limit(limit);
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map(
-    (row): PropiedadListado => ({
-      id: row.id,
-      titulo: row.titulo,
-      ciudad: row.ciudad_municipio,
-      departamento: row.departamento,
-      precio: row.precio_alquiler_diario.toLocaleString("es-CO"),
-      capacidad: row.capacidad_huespedes,
-      habitaciones: row.numero_habitaciones,
-      imagen: row.imagenes?.[0] ?? "",
-      tipo: row.tipo_propiedad,
-    })
-  );
+  return (data ?? []).map(mapPropiedadRow);
 }
 
 /** Trae propiedades aprobadas por una lista de IDs (para la pantalla Favoritos). */
@@ -185,19 +196,7 @@ export async function listarPropiedadesPorIds(
     .in("id", ids);
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map(
-    (row): PropiedadListado => ({
-      id: row.id,
-      titulo: row.titulo,
-      ciudad: row.ciudad_municipio,
-      departamento: row.departamento,
-      precio: row.precio_alquiler_diario.toLocaleString("es-CO"),
-      capacidad: row.capacidad_huespedes,
-      habitaciones: row.numero_habitaciones,
-      imagen: row.imagenes?.[0] ?? "",
-      tipo: row.tipo_propiedad,
-    })
-  );
+  return (data ?? []).map(mapPropiedadRow);
 }
 
 // ── Mixto: vehículos + propiedades aprobados ─────────────────────────
@@ -219,6 +218,54 @@ export async function listarMixtoAprobado(
   // ordenan por created_at desc cada uno. Para mezclar, hacemos zip simple
   // alternando los más recientes de cada lista en orden de inserción.
   // (Más adelante podemos cambiarlo a un ORDER global si hace falta.)
+  const mezclados: DisponibleMixto[] = [];
+  const max = Math.max(vehs.length, props.length);
+  for (let i = 0; i < max; i++) {
+    if (vehs[i]) mezclados.push({ kind: "vehiculo", data: vehs[i] });
+    if (props[i]) mezclados.push({ kind: "propiedad", data: props[i] });
+  }
+  return mezclados.slice(0, limit);
+}
+
+// ── Búsqueda: nombre/título, marca y ciudad sobre veh + prop ─────────
+const SELECT_VEHICULO_BUSQUEDA =
+  "id, marca, modelo, precio_alquiler_diario, ciudad_entrega_principal, ciudad_entrega_opcional, tipo_combustible, numero_sillas, transmision, imagenes";
+const SELECT_PROPIEDAD_BUSQUEDA =
+  "id, titulo, ciudad_municipio, departamento, precio_alquiler_diario, capacidad_huespedes, numero_habitaciones, imagenes, tipo_propiedad";
+
+/** Busca por nombre/título, marca (vehículos) o ciudad sobre el feed mixto aprobado. */
+export async function buscarMixto(
+  query: string,
+  limit = 40
+): Promise<DisponibleMixto[]> {
+  const q = query.trim().replace(/[,()%]/g, "");
+  if (!q) return [];
+
+  const [vRes, pRes] = await Promise.all([
+    supabase
+      .from("vehiculos")
+      .select(SELECT_VEHICULO_BUSQUEDA)
+      .eq("status", "approved")
+      .or(
+        `marca.ilike.%${q}%,modelo.ilike.%${q}%,ciudad_entrega_principal.ilike.%${q}%`
+      )
+      .order("created_at", { ascending: false })
+      .limit(limit),
+    supabase
+      .from("propiedades")
+      .select(SELECT_PROPIEDAD_BUSQUEDA)
+      .eq("status", "approved")
+      .or(`titulo.ilike.%${q}%,ciudad_municipio.ilike.%${q}%`)
+      .order("created_at", { ascending: false })
+      .limit(limit),
+  ]);
+
+  if (vRes.error) throw new Error(vRes.error.message);
+  if (pRes.error) throw new Error(pRes.error.message);
+
+  const vehs = (vRes.data ?? []).map(mapVehiculoRow);
+  const props = (pRes.data ?? []).map(mapPropiedadRow);
+
   const mezclados: DisponibleMixto[] = [];
   const max = Math.max(vehs.length, props.length);
   for (let i = 0; i < max; i++) {

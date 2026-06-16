@@ -1,5 +1,5 @@
 import { Pressable, TextInput, View } from "react-native";
-import { Search } from "./icons";
+import { Search, X } from "./icons";
 import { COLORS } from "../theme/colors";
 
 type Props = {
@@ -9,6 +9,8 @@ type Props = {
 };
 
 export function SearchBar({ value, onChangeText, onSubmit }: Props) {
+  const tieneTexto = !!value;
+
   return (
     <View
       className="flex-row items-center gap-2.5 rounded-2xl px-4 h-12 bg-white border border-line"
@@ -31,13 +33,17 @@ export function SearchBar({ value, onChangeText, onSubmit }: Props) {
         returnKeyType="search"
       />
       <Pressable
-        onPress={onSubmit}
+        onPress={tieneTexto ? () => onChangeText?.("") : onSubmit}
         hitSlop={10}
         accessibilityRole="button"
-        accessibilityLabel="Buscar"
+        accessibilityLabel={tieneTexto ? "Limpiar búsqueda" : "Buscar"}
         className="w-8 h-8 rounded-xl items-center justify-center bg-accent"
       >
-        <Search size={15} color={COLORS.white} />
+        {tieneTexto ? (
+          <X size={15} color={COLORS.white} />
+        ) : (
+          <Search size={15} color={COLORS.white} />
+        )}
       </Pressable>
     </View>
   );
