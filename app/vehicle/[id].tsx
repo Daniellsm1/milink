@@ -15,13 +15,17 @@ import Animated, { FadeIn, Keyframe } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
+  Bano,
   Calendar,
+  Cama,
   ChevronLeft,
   Fuel,
   Gauge,
   Heart,
   HeartFilled,
   MapPin,
+  Personas,
+  Puerta,
   Seat,
   Settings,
   Share2,
@@ -52,6 +56,10 @@ const ICONO_CARACTERISTICA: Record<
   ano: (p) => <Calendar {...p} />,
   kilometraje: (p) => <Gauge {...p} />,
   ubicacion: (p) => <MapPin {...p} />,
+  personas: (p) => <Personas {...p} />,
+  puerta: (p) => <Puerta {...p} />,
+  cama: (p) => <Cama {...p} />,
+  bano: (p) => <Bano {...p} />,
 };
 
 export default function DetalleVehiculo() {

@@ -2,7 +2,7 @@ import { Alert, Pressable, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
-import { Heart, HeartFilled, MapPin, Settings, Users, WhatsApp } from "./icons";
+import { Heart, HeartFilled, MapPin, Personas, Puerta, WhatsApp } from "./icons";
 import { COLORS } from "../theme/colors";
 import type { PropiedadListado } from "../services/feed";
 import { useSession } from "../lib/auth";
@@ -86,13 +86,13 @@ export function PropiedadCard({ propiedad, onPress, onReservar }: Props) {
           ) : null}
           <View className="absolute bottom-2 left-2 right-2 flex-row gap-1">
             <Pill>
-              <Users size={11} color={COLORS.text} />
+              <Personas size={11} color={COLORS.text} />
               <Text className="text-[9px] font-quicksand-bold text-ink">
                 {propiedad.capacidad}
               </Text>
             </Pill>
             <Pill>
-              <Settings size={11} color={COLORS.text} />
+              <Puerta size={11} color={COLORS.text} />
               <Text className="text-[9px] font-quicksand-bold text-ink">
                 {propiedad.habitaciones} hab
               </Text>

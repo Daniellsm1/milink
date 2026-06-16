@@ -10,7 +10,11 @@ export type CaracteristicaIcono =
   | "asientos"
   | "ano"
   | "kilometraje"
-  | "ubicacion";
+  | "ubicacion"
+  | "personas"
+  | "puerta"
+  | "cama"
+  | "bano";
 
 export type Caracteristica = {
   icono: CaracteristicaIcono;
@@ -88,7 +92,7 @@ export function getDetalleById(id: string): DetailItem | null {
       caracteristicas: esPropiedad
         ? [
             { icono: "ubicacion", etiqueta: n.loc },
-            { icono: "asientos", etiqueta: "Capacidad amplia" },
+            { icono: "personas", etiqueta: "Capacidad amplia" },
           ]
         : [
             { icono: "combustible", etiqueta: "Gasolina" },
@@ -199,10 +203,10 @@ async function fetchPropiedad(id: string): Promise<DetailItem | null> {
     imagenes: data.imagenes ?? [],
     caracteristicas: [
       { icono: "ubicacion", etiqueta: data.ciudad_municipio },
-      { icono: "asientos", etiqueta: `${data.capacidad_huespedes} huéspedes` },
-      { icono: "ano", etiqueta: `${data.numero_habitaciones} hab.` },
-      { icono: "kilometraje", etiqueta: `${data.numero_camas} camas` },
-      { icono: "combustible", etiqueta: `${data.numero_banos} baños` },
+      { icono: "personas", etiqueta: `${data.capacidad_huespedes} huéspedes` },
+      { icono: "puerta", etiqueta: `${data.numero_habitaciones} hab.` },
+      { icono: "cama", etiqueta: `${data.numero_camas} camas` },
+      { icono: "bano", etiqueta: `${data.numero_banos} baños` },
     ],
     descripcion:
       data.descripcion ??

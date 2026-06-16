@@ -390,6 +390,35 @@ export const HeartFilled = (p: IconProps) => (
   </Filled>
 );
 
+// ─── Iconos de inmuebles (specs) ──────────────────────────────────
+// Grupo de personas — capacidad / huéspedes
+export const Personas = (p: IconProps) => (
+  <Filled {...p}>
+    <Path d="M9 11c1.66 0 3-1.34 3-3S10.66 5 9 5 6 6.34 6 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm7-2c1.66 0 3-1.34 3-3s-1.34-3-3-3c-.35 0-.69.07-1 .18.63.84 1 1.85 1 2.82s-.37 1.98-1 2.82c.31.11.65.18 1 .18zm1 2.13c.78.57 1.5 1.43 1.5 2.37V19h5v-2.5c0-1.66-2.42-2.74-4.5-2.37z" />
+  </Filled>
+);
+
+// Puerta cerrada con perilla — habitaciones
+export const Puerta = (p: IconProps) => (
+  <Filled {...p}>
+    <Path d="M6 2c-.55 0-1 .45-1 1v18c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V3c0-.55-.45-1-1-1H6zm10 18H8V4h8v16zm-1-9c0 .55-.45 1-1 1s-1-.45-1-1 .45-1 1-1 1 .45 1 1z" />
+  </Filled>
+);
+
+// Cama de perfil con almohada — camas
+export const Cama = (p: IconProps) => (
+  <Filled {...p}>
+    <Path d="M21 10.78V8c0-1.65-1.35-3-3-3h-5v6H5V4H3v16h2v-3h14v3h2v-6.22c0-1.34-.88-2.47-2-2.86V10.78zM10 11H6V8h4v3z" />
+  </Filled>
+);
+
+// Bañera con grifo — baños
+export const Bano = (p: IconProps) => (
+  <Filled {...p}>
+    <Path d="M7 7a2 2 0 1 1 4 0 .5.5 0 0 0 1 0 3 3 0 0 0-6 0v5H4a1 1 0 0 0-1 1v1a4 4 0 0 0 2 3.46V19a1 1 0 0 0 2 0v-1.05c.16.03.33.05.5.05h9c.17 0 .34-.02.5-.05V19a1 1 0 0 0 2 0v-1.54A4 4 0 0 0 21 14v-1a1 1 0 0 0-1-1H7V7z" />
+  </Filled>
+);
+
 // Mapa categoría -> icono lleno
 export const CATEGORY_ICONS = {
   camionetas: Truck,
