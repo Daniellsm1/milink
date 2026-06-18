@@ -204,10 +204,11 @@ export type DisponibleMixto =
   | { kind: "vehiculo"; data: Disponible }
   | { kind: "propiedad"; data: PropiedadListado };
 
-/** Listado completo para "Disponibles para ti": veh + prop aprobados,
- *  intercalados por fecha de creación más reciente. */
+/** Listado para "Disponibles para ti": veh + prop aprobados, intercalados.
+ *  Default 20 porque la pantalla Explorar limita la sección a las 20 más
+ *  recientes; el resto se ve en /categoria/[key]. */
 export async function listarMixtoAprobado(
-  limit = 40
+  limit = 20
 ): Promise<DisponibleMixto[]> {
   const [vehs, props] = await Promise.all([
     listarVehiculosAprobados({}, limit),

@@ -49,7 +49,7 @@ export default function RootLayout() {
     });
     queryClient.prefetchQuery({
       queryKey: ["mixto-aprobado"],
-      queryFn: () => listarMixtoAprobado(40),
+      queryFn: () => listarMixtoAprobado(20),
       staleTime: 30_000,
     });
   }, []);

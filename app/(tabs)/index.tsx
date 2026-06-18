@@ -85,7 +85,7 @@ export default function Explorar() {
   // con filtros → solo vehículos filtrados.
   const mixtoQuery = useQuery({
     queryKey: ["mixto-aprobado"],
-    queryFn: () => listarMixtoAprobado(40),
+    queryFn: () => listarMixtoAprobado(20),
     staleTime: 30_000,
     enabled: filtrosActivos === 0,
   });
