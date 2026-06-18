@@ -164,7 +164,7 @@ export default function Explorar() {
               <View className="flex-row items-center justify-between mb-4">
                 <View className="flex-row items-center gap-2.5">
                   <Image
-                    source={require("../../assets/milink-icon.png")}
+                    source={require("../../assets/icon1.png")}
                     style={{ width: 40, height: 40, borderRadius: 12 }}
                     contentFit="cover"
                   />

@@ -4,7 +4,7 @@
     "slug": "milinkApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon1.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {

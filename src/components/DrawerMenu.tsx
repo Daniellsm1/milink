@@ -210,7 +210,7 @@ export function DrawerMenu({ visible, onClose }: Props) {
               ) : (
                 <View className="flex-row items-center gap-3 flex-1">
                   <Image
-                    source={require("../../assets/milink-icon.png")}
+                    source={require("../../assets/icon1.png")}
                     style={{ width: 40, height: 40, borderRadius: 10 }}
                     contentFit="cover"
                   />

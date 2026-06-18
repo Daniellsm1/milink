@@ -166,8 +166,7 @@ supabase/
 └── migrations/                 # 0001 → 0005 (el usuario los corre en SQL Editor)
 
 assets/
-├── milink-icon.png             # Logo (~5 MB — pendiente comprimir)
-├── icono1.svg                  # SVG auto-traced original (1.9MB, NO usado por código)
+├── icon1.png                   # Icono único de la app (~330 KB, 1024×1024, usado en app.json, login, registro, header Explorar y drawer)
 ├── favoritosvacio.png
 ├── *.webp                      # 6 imágenes de categoría (camionetas/carros/motos/apartamentos/casas/fincas)
 ├── docs/                       # 6 documentos markdown institucionales (01–06)
@@ -298,15 +297,13 @@ eas build --profile development --platform android  # Build de desarrollo
 4. **`auth.users` bloqueado en cliente** por RLS. `nombre_propietario` denormalizado en publicaciones.
 5. **`scrollToOffset` y `pagingEnabled`**: carrusel detalle usa `pagingEnabled` (ancho pantalla); Nuevas entradas usa `snapToInterval`.
 6. **`expo install` vs `npm install`**: siempre `expo install` para deps de Expo SDK 54.
-7. **Logo `milink-icon.png` ~5 MB** — pendiente comprimir.
-8. **Email confirmation** en Supabase Auth → para pruebas conviene OFF.
-9. **Reanimated 4 en web**: funciona, pero `transform` durante animación puede dejar residuos. Si se ve raro en web, no es necesariamente bug en nativo.
-10. **MCP Supabase** conectado a otra cuenta — migraciones se dan al usuario para SQL Editor.
-11. **Nested `<button>` en web**: Pressable corazón dentro de Pressable card → `<button>` anidados (HTML inválido). Solución: heart como **sibling** absoluto, no hijo.
-12. **`FileSystem.readAsStringAsync` deprecado en SDK 54**: usar `fetch(asset.localUri ?? asset.uri)` para cargar archivos .md.
-13. **`icono1.svg` inutilizable**: SVG auto-traced de 1,889 paths (1.9MB). Queda en el repo como referencia; el splash usa logo redibujado a mano.
-14. **`react-native-markdown-display` + React 19**: requiere `--legacy-peer-deps`. Después de instalarlo, verificar que `react-native-worklets` sigue presente.
-15. **Gradientes SVG en Android se fragmentan**: combinar `<Svg viewBox + preserveAspectRatio="none">` con `<LinearGradient>` (cualquier modo: `userSpaceOnUse` u `objectBoundingBox`) renderiza el gradiente en **bloques sólidos** en Android (Skia ignora la deformación del viewBox al calcular los stops). En web sí queda continuo. **Solución:** `expo-linear-gradient` (módulo nativo: Android `android.graphics.LinearGradient`, iOS `CAGradientLayer`, web `linear-gradient` CSS). Como agrega código nativo, **requiere rebuild del dev-client** (`eas build --profile development --platform android`), no basta con `--clear`.
+7. **Email confirmation** en Supabase Auth → para pruebas conviene OFF.
+8. **Reanimated 4 en web**: funciona, pero `transform` durante animación puede dejar residuos. Si se ve raro en web, no es necesariamente bug en nativo.
+9. **MCP Supabase** conectado a otra cuenta — migraciones se dan al usuario para SQL Editor.
+10. **Nested `<button>` en web**: Pressable corazón dentro de Pressable card → `<button>` anidados (HTML inválido). Solución: heart como **sibling** absoluto, no hijo.
+11. **`FileSystem.readAsStringAsync` deprecado en SDK 54**: usar `fetch(asset.localUri ?? asset.uri)` para cargar archivos .md.
+12. **`react-native-markdown-display` + React 19**: requiere `--legacy-peer-deps`. Después de instalarlo, verificar que `react-native-worklets` sigue presente.
+13. **Gradientes SVG en Android se fragmentan**: combinar `<Svg viewBox + preserveAspectRatio="none">` con `<LinearGradient>` (cualquier modo: `userSpaceOnUse` u `objectBoundingBox`) renderiza el gradiente en **bloques sólidos** en Android (Skia ignora la deformación del viewBox al calcular los stops). En web sí queda continuo. **Solución:** `expo-linear-gradient` (módulo nativo: Android `android.graphics.LinearGradient`, iOS `CAGradientLayer`, web `linear-gradient` CSS). Como agrega código nativo, **requiere rebuild del dev-client** (`eas build --profile development --platform android`), no basta con `--clear`.
 
 ---
 

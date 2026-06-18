@@ -1,9 +1,8 @@
 // Splash animado de MiLink: el logo se dibuja línea a línea (stroke draw),
 // brilla con efecto neon, aparece el círculo verde y termina como badge sólido.
 //
-// El logo está redibujado a mano como SVG limpio de 5 formas (el archivo
-// assets/icono1.svg es un trazado automático de 1.889 paths, inservible para
-// animar por partes): techo superior, techo inferior, chimenea y dos eslabones.
+// El logo está redibujado a mano como SVG limpio de 5 formas (techo superior,
+// techo inferior, chimenea y dos eslabones) para poder animar por partes.
 import { useEffect } from "react";
 import { useWindowDimensions, View } from "react-native";
 import Svg, { Circle, G, Line, Path, Rect } from "react-native-svg";

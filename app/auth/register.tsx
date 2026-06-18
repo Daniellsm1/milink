@@ -97,7 +97,7 @@ export default function Register() {
         >
           <View className="items-center mb-5">
             <Image
-              source={require("../../assets/milink-icon.png")}
+              source={require("../../assets/icon1.png")}
               style={{ width: 72, height: 72, borderRadius: 18 }}
               contentFit="cover"
             />
