@@ -20,6 +20,7 @@ import {
   marcarReporteResuelto,
   type ReporteAdmin,
 } from "../../src/services/reportes";
+import { useWebMaxWidth } from "../../src/lib/responsive";
 
 const DANGER = "#DC2626";
 
@@ -28,6 +29,7 @@ export default function ReportesAdmin() {
   const { user, loading } = useSession();
   const admin = esAdmin(user);
   const queryClient = useQueryClient();
+  const webMax = useWebMaxWidth(820);
 
   useEffect(() => {
     if (loading) return;
@@ -68,7 +70,10 @@ export default function ReportesAdmin() {
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-white">
-      <View className="flex-row items-center px-4 pt-2 pb-2 gap-2 border-b border-line">
+      <View
+        className="flex-row items-center px-4 pt-2 pb-2 gap-2 border-b border-line"
+        style={webMax ?? undefined}
+      >
         <Pressable
           onPress={() => router.back()}
           hitSlop={10}
@@ -91,7 +96,7 @@ export default function ReportesAdmin() {
       <FlatList
         data={reportesQuery.data ?? []}
         keyExtractor={(r) => r.id}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{ padding: 16, gap: 12, ...(webMax ?? {}) }}
         refreshControl={
           <RefreshControl
             refreshing={reportesQuery.isRefetching}

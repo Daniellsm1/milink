@@ -30,6 +30,7 @@ import {
   telefonoCompleto,
   vehiculoSchema,
 } from "../../src/lib/validation/publicacion";
+import { useWebMaxWidth } from "../../src/lib/responsive";
 
 type Tipo = "vehiculo" | "propiedad";
 
@@ -70,6 +71,7 @@ export default function PublicarFormulario() {
   const [enviando, setEnviando] = useState(false);
   const [exito, setExito] = useState(false);
   const [errores, setErrores] = useState<Record<string, string>>({});
+  const webMax = useWebMaxWidth(680);
 
   // ── Teléfono de contacto (ambos tipos) ──
   const [indicativo, setIndicativo] = useState("+57");
@@ -265,7 +267,10 @@ export default function PublicarFormulario() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         {/* Header */}
-        <View className="flex-row items-center px-4 pt-2 pb-2 gap-2">
+        <View
+          className="flex-row items-center px-4 pt-2 pb-2 gap-2"
+          style={webMax ?? undefined}
+        >
           <Pressable
             onPress={() => router.back()}
             hitSlop={10}
@@ -281,7 +286,11 @@ export default function PublicarFormulario() {
         </View>
 
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 24,
+            ...(webMax ?? {}),
+          }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -384,7 +393,10 @@ export default function PublicarFormulario() {
         </ScrollView>
 
         {/* Botón guardar */}
-        <View className="px-5 pt-3 pb-5 border-t border-line bg-white">
+        <View
+          className="px-5 pt-3 pb-5 border-t border-line bg-white"
+          style={webMax ?? undefined}
+        >
           <Pressable
             onPress={guardar}
             disabled={!puedeGuardar || enviando}
@@ -415,7 +427,10 @@ export default function PublicarFormulario() {
           className="flex-1 items-center justify-center px-8"
           style={{ backgroundColor: "rgba(15,23,42,0.55)" }}
         >
-          <View className="bg-white rounded-3xl p-6 items-center w-full">
+          <View
+            className="bg-white rounded-3xl p-6 items-center w-full"
+            style={{ maxWidth: 420 }}
+          >
             <View className="w-16 h-16 rounded-full bg-accentSoft items-center justify-center mb-4">
               <Check size={32} color={COLORS.accent} />
             </View>

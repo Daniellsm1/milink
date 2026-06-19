@@ -47,6 +47,7 @@ import {
 import { useSession } from "../../src/lib/auth";
 import { reportar } from "../../src/services/reportes";
 import { bloquearUsuario } from "../../src/services/bloqueos";
+import { useWebMaxWidth } from "../../src/lib/responsive";
 
 const DANGER = "#DC2626";
 
@@ -79,6 +80,7 @@ export default function DetalleVehiculo() {
   const insets = useSafeAreaInsets();
   const { user } = useSession();
   const queryClient = useQueryClient();
+  const webMax = useWebMaxWidth(820);
 
   const detalleQuery = useQuery({
     queryKey: ["detalle", id],
@@ -240,7 +242,7 @@ export default function DetalleVehiculo() {
   return (
     <View className="flex-1 bg-white">
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 110 }}
+        contentContainerStyle={{ paddingBottom: 110, ...(webMax ?? {}) }}
         showsVerticalScrollIndicator={false}
       >
         {/* Carrusel de imágenes. El contenedor externo NO lleva transform
@@ -299,7 +301,7 @@ export default function DetalleVehiculo() {
         {/* Barra flotante superior */}
         <View
           className="absolute left-0 right-0 flex-row items-center justify-between px-4"
-          style={{ top: insets.top + 8 }}
+          style={{ top: insets.top + 8, ...(webMax ?? {}) }}
           pointerEvents="box-none"
         >
           <Pressable
@@ -454,7 +456,7 @@ export default function DetalleVehiculo() {
       {/* Barra de acción inferior fija */}
       <View
         className="absolute left-0 right-0 bottom-0 flex-row items-center justify-between bg-white px-5 pt-3"
-        style={{ paddingBottom: insets.bottom + 12, ...shadowTop }}
+        style={{ paddingBottom: insets.bottom + 12, ...shadowTop, ...(webMax ?? {}) }}
       >
         <View>
           <Text className="font-quicksand-bold text-[20px] text-ink">

@@ -46,6 +46,7 @@ import type {
   VehiculoCategoria,
   VehiculoRow,
 } from "../../../../src/types/database";
+import { useWebMaxWidth } from "../../../../src/lib/responsive";
 
 type Tipo = "vehiculo" | "propiedad";
 
@@ -117,6 +118,7 @@ export default function EditarPublicacion() {
   const [exito, setExito] = useState(false);
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [precargado, setPrecargado] = useState(false);
+  const webMax = useWebMaxWidth(680);
 
   // Fotos: 3 slots posicionales con discriminated union (existente/nueva).
   const [fotos, setFotos] = useState<(FotoEdit | null)[]>([null, null, null]);
@@ -443,7 +445,11 @@ export default function EditarPublicacion() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 24,
+            ...(webMax ?? {}),
+          }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -524,7 +530,10 @@ export default function EditarPublicacion() {
         </ScrollView>
 
         {/* Botón guardar */}
-        <View className="px-5 pt-3 pb-5 border-t border-line bg-white">
+        <View
+          className="px-5 pt-3 pb-5 border-t border-line bg-white"
+          style={webMax ?? undefined}
+        >
           <Pressable
             onPress={handleGuardar}
             disabled={!puedeGuardar || enviando}
@@ -555,7 +564,10 @@ export default function EditarPublicacion() {
           className="flex-1 items-center justify-center px-8"
           style={{ backgroundColor: "rgba(15,23,42,0.55)" }}
         >
-          <View className="bg-white rounded-3xl p-6 items-center w-full">
+          <View
+            className="bg-white rounded-3xl p-6 items-center w-full"
+            style={{ maxWidth: 420 }}
+          >
             <View className="w-16 h-16 rounded-full bg-accentSoft items-center justify-center mb-4">
               <Check size={32} color={COLORS.accent} />
             </View>

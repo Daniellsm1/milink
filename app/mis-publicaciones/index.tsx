@@ -18,6 +18,7 @@ import {
   type PublicacionPropia,
 } from "../../src/services/misPublicaciones";
 import { COLORS } from "../../src/theme/colors";
+import { useWebMaxWidth } from "../../src/lib/responsive";
 
 const STATUS_LABEL: Record<PublicacionPropia["status"], string> = {
   pending_approval: "En revisión",
@@ -42,6 +43,7 @@ export default function MisPublicaciones() {
   const router = useRouter();
   const { session, user, loading: loadingSession } = useSession();
   const tabBarH = useTabBarHeight();
+  const webMax = useWebMaxWidth(720);
 
   useEffect(() => {
     if (!loadingSession && !session) {
@@ -129,6 +131,7 @@ export default function MisPublicaciones() {
           paddingHorizontal: 16,
           paddingBottom: tabBarH + 16,
           gap: 12,
+          ...(webMax ?? {}),
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={

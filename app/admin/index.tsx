@@ -16,12 +16,14 @@ import { esAdmin } from "../../src/lib/admins";
 import { COLORS } from "../../src/theme/colors";
 import { ChevronLeft, ChevronRight, Flag, MapPin } from "../../src/components/icons";
 import { listarPendientes } from "../../src/services/moderacion";
+import { useWebMaxWidth } from "../../src/lib/responsive";
 
 export default function AdminPanel() {
   const router = useRouter();
   const { user, loading } = useSession();
 
   const admin = esAdmin(user);
+  const webMax = useWebMaxWidth(820);
 
   // Redirige si no es admin (o si no hay sesión).
   useEffect(() => {
@@ -48,7 +50,10 @@ export default function AdminPanel() {
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-white">
       {/* Header */}
-      <View className="flex-row items-center px-4 pt-2 pb-2 gap-2 border-b border-line">
+      <View
+        className="flex-row items-center px-4 pt-2 pb-2 gap-2 border-b border-line"
+        style={webMax ?? undefined}
+      >
         <Pressable
           onPress={() => router.back()}
           hitSlop={10}
@@ -84,7 +89,7 @@ export default function AdminPanel() {
       <FlatList
         data={pendientesQuery.data ?? []}
         keyExtractor={(item) => `${item.tipo}-${item.id}`}
-        contentContainerStyle={{ padding: 16, gap: 12 }}
+        contentContainerStyle={{ padding: 16, gap: 12, ...(webMax ?? {}) }}
         refreshControl={
           <RefreshControl
             refreshing={pendientesQuery.isRefetching}

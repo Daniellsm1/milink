@@ -32,6 +32,7 @@ import {
   listarUsuariosRegistrados,
 } from "../../src/services/adminUsuarios";
 import type { UsuarioRegistrado } from "../../src/types/database";
+import { useWebMaxWidth } from "../../src/lib/responsive";
 
 const capitalize = (s: string) =>
   s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -57,6 +58,7 @@ export default function UsuariosAdmin() {
 
   const admin = esAdmin(user);
   const tabBarH = useTabBarHeight();
+  const webMax = useWebMaxWidth(820);
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -165,6 +167,7 @@ export default function UsuariosAdmin() {
           paddingHorizontal: 16,
           paddingBottom: tabBarH + 24,
           gap: 12,
+          ...(webMax ?? {}),
         }}
         showsVerticalScrollIndicator={false}
         refreshControl={

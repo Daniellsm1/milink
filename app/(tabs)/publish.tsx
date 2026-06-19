@@ -15,6 +15,7 @@ import { Checkbox } from "../../src/components/form/Checkbox";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { TERMINOS_CHECKBOXES } from "../../src/content/terminosPublicacion";
 import { COLORS, FONTS } from "../../src/theme/colors";
+import { useWebMaxWidth } from "../../src/lib/responsive";
 
 const markdownStyles = {
   body: {
@@ -92,6 +93,7 @@ export default function PublicarLegal() {
   const [marcados, setMarcados] = useState<Record<string, boolean>>({});
   const [contenido, setContenido] = useState<string | null>(null);
   const [errorCarga, setErrorCarga] = useState(false);
+  const webMax = useWebMaxWidth(680);
 
   useEffect(() => {
     let mounted = true;
@@ -126,7 +128,7 @@ export default function PublicarLegal() {
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-white">
-      <View className="px-5 pt-3 pb-2">
+      <View className="px-5 pt-3 pb-2" style={webMax ?? undefined}>
         <Text className="font-quicksand-bold text-[22px] text-ink">
           Términos de publicación
         </Text>
@@ -137,7 +139,11 @@ export default function PublicarLegal() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingBottom: 16,
+          ...(webMax ?? {}),
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* Documento legal — se carga directamente del .md canónico */}
@@ -175,7 +181,7 @@ export default function PublicarLegal() {
           para que el botón nunca quede oculto detrás de él. */}
       <View
         className="px-5 pt-3 border-t border-line bg-white"
-        style={{ paddingBottom: tabBarH + 12 }}
+        style={{ paddingBottom: tabBarH + 12, ...(webMax ?? {}) }}
       >
         <Pressable
           onPress={() => {

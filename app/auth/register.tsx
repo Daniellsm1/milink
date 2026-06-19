@@ -23,6 +23,7 @@ import {
   User,
 } from "../../src/components/icons";
 import { COLORS } from "../../src/theme/colors";
+import { useWebMaxWidth } from "../../src/lib/responsive";
 
 export default function Register() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const webMax = useWebMaxWidth(440);
 
   const handleRegister = async () => {
     if (!nombre.trim() || !email.trim() || !password) {
@@ -91,6 +93,7 @@ export default function Register() {
             justifyContent: "center",
             paddingHorizontal: 28,
             paddingBottom: 32,
+            ...(webMax ?? {}),
           }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}

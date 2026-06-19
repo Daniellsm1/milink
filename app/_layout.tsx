@@ -1,5 +1,6 @@
 import "../global.css";
 import { useEffect, useState } from "react";
+import { Platform } from "react-native";
 import { Stack } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -31,7 +32,8 @@ export default function RootLayout() {
     Quicksand_700Bold,
   });
   // El splash animado cubre la app hasta que su animación termina.
-  const [splashDone, setSplashDone] = useState(false);
+  // En web lo saltamos: un overlay de ~3.5s penaliza el first paint y el SEO.
+  const [splashDone, setSplashDone] = useState(Platform.OS === "web");
 
   useEffect(() => {
     if (fontsLoaded || fontError) {

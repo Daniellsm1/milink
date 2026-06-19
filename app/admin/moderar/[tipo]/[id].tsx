@@ -27,6 +27,7 @@ import type {
   PropiedadRow,
   VehiculoRow,
 } from "../../../../src/types/database";
+import { useWebMaxWidth } from "../../../../src/lib/responsive";
 
 type Tipo = "vehiculo" | "propiedad";
 
@@ -62,6 +63,7 @@ export default function ModerarDetalle() {
 
   const admin = esAdmin(user);
   const tabBarH = useTabBarHeight();
+  const webMax = useWebMaxWidth(820);
 
   useEffect(() => {
     if (loading) return;
@@ -174,7 +176,7 @@ export default function ModerarDetalle() {
     <View className="flex-1 bg-white">
       {headerOptions}
       <ScrollView
-        contentContainerStyle={{ paddingBottom: tabBarH + 24 }}
+        contentContainerStyle={{ paddingBottom: tabBarH + 24, ...(webMax ?? {}) }}
         showsVerticalScrollIndicator={false}
       >
         {/* A) Carrusel */}

@@ -22,6 +22,7 @@ import {
   Mail,
 } from "../../src/components/icons";
 import { COLORS } from "../../src/theme/colors";
+import { useWebMaxWidth } from "../../src/lib/responsive";
 
 export default function Login() {
   const router = useRouter();
@@ -29,6 +30,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const webMax = useWebMaxWidth(440);
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -73,6 +75,7 @@ export default function Login() {
             justifyContent: "center",
             paddingHorizontal: 28,
             paddingBottom: 32,
+            ...(webMax ?? {}),
           }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}

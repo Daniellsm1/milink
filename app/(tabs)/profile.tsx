@@ -12,6 +12,7 @@ import {
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
 import { useEliminarCuenta } from "../../src/lib/eliminarCuentaFlow";
+import { useWebMaxWidth } from "../../src/lib/responsive";
 
 const DANGER = "#DC2626";
 
@@ -20,6 +21,7 @@ export default function Perfil() {
   const { user, signOut } = useSession();
   const tabBarH = useTabBarHeight();
   const eliminarCuenta = useEliminarCuenta();
+  const webMax = useWebMaxWidth(560);
 
   if (!user) {
     return (
@@ -53,6 +55,7 @@ export default function Perfil() {
           padding: 24,
           gap: 16,
           paddingBottom: tabBarH + 16,
+          ...(webMax ?? {}),
         }}
         showsVerticalScrollIndicator={false}
       >

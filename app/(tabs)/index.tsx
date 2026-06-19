@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -52,6 +60,13 @@ function HeaderIconButton({
 export default function Explorar() {
   const router = useRouter();
   const tabBarH = useTabBarHeight();
+
+  // Responsive web: en escritorio mostramos más columnas y centramos el feed con
+  // un ancho máximo. En nativo y en web angosta (móvil) queda idéntico: 2 columnas.
+  const { width } = useWindowDimensions();
+  const isWeb = Platform.OS === "web";
+  const numColumns = !isWeb ? 2 : width >= 1100 ? 4 : width >= 768 ? 3 : 2;
+  const wideWeb = isWeb && width >= 768;
 
   const [filtros, setFiltros] = useState<FiltrosVehiculo>({});
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -136,11 +151,20 @@ export default function Explorar() {
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-bg">
       <FlatList
+        // Cambiar numColumns exige re-montar la FlatList (requisito de RN).
+        key={`feed-cols-${numColumns}`}
         data={disponibles}
         keyExtractor={(item) => `${item.kind}-${item.data.id}`}
-        numColumns={2}
+        numColumns={numColumns}
         columnWrapperStyle={{ gap: 12, paddingHorizontal: 20 }}
-        contentContainerStyle={{ gap: 12, paddingBottom: tabBarH + 16 }}
+        contentContainerStyle={{
+          gap: 12,
+          paddingBottom: tabBarH + 16,
+          // Escritorio: centra el feed con ancho máximo (no "móvil estirado").
+          ...(wideWeb
+            ? { maxWidth: 1120, width: "100%", marginHorizontal: "auto" }
+            : null),
+        }}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) =>
           item.kind === "vehiculo" ? (

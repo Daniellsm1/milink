@@ -262,6 +262,8 @@ Polimórfica con XOR check: solo uno de `vehiculo_id`/`propiedad_id` non-null. `
 | 0003 | `0003_admin_policies.sql` | `public.es_admin()` + policies admin |
 | 0004 | `0004_telefono_contacto.sql` | Columna `telefono_contacto` en ambas tablas |
 | 0005 | `0005_nombre_propietario.sql` | Columna `nombre_propietario` + backfill con `SECURITY DEFINER` |
+| 0006 | `0006_admin_usuarios.sql` | RPC `admin_eliminar_usuario(p_user_id)` (SECURITY DEFINER) + listado admin |
+| 0007 | `0007_cuenta_y_ugc.sql` | RPC `eliminar_mi_cuenta()` + tablas `reportes`/`bloqueos` + `admin_listar_reportes()` |
 
 **Status:** todas aplicadas en el proyecto `mucpwtieilxgasxagujo`.
 
@@ -273,7 +275,7 @@ Polimórfica con XOR check: solo uno de `vehiculo_id`/`propiedad_id` non-null. `
 
 `.env` (gitignored): `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`. `.env.example` commiteado como plantilla.
 
-Sesión: `AsyncStorage` (no SecureStore para que funcione web). Polyfill URL via `react-native-url-polyfill/auto` en `src/lib/supabase.ts`.
+Sesión: adaptador por plataforma en `src/lib/sessionStorage.ts` — **SecureStore con chunking ~1.8KB en nativo** (cifrado en Keychain/Keystore), **AsyncStorage en web** (con fallback no-op en SSR). Cableado en `supabase.ts` como `auth.storage` + `detectSessionInUrl: Platform.OS === "web" && typeof window !== "undefined"`. Polyfill URL via `react-native-url-polyfill/auto`.
 
 ---
 
@@ -304,6 +306,9 @@ eas build --profile development --platform android  # Build de desarrollo
 11. **`FileSystem.readAsStringAsync` deprecado en SDK 54**: usar `fetch(asset.localUri ?? asset.uri)` para cargar archivos .md.
 12. **`react-native-markdown-display` + React 19**: requiere `--legacy-peer-deps`. Después de instalarlo, verificar que `react-native-worklets` sigue presente.
 13. **Gradientes SVG en Android se fragmentan**: combinar `<Svg viewBox + preserveAspectRatio="none">` con `<LinearGradient>` (cualquier modo: `userSpaceOnUse` u `objectBoundingBox`) renderiza el gradiente en **bloques sólidos** en Android (Skia ignora la deformación del viewBox al calcular los stops). En web sí queda continuo. **Solución:** `expo-linear-gradient` (módulo nativo: Android `android.graphics.LinearGradient`, iOS `CAGradientLayer`, web `linear-gradient` CSS). Como agrega código nativo, **requiere rebuild del dev-client** (`eas build --profile development --platform android`), no basta con `--clear`.
+14. **Web `output: "static"` hace SSR en Node — `window` no existe ahí**: Expo Router pre-renderiza cada ruta en Node antes de servir el bundle. Cualquier código que toque `window` (AsyncStorage, `detectSessionInUrl` de Supabase, `localStorage`) **revienta el `expo export -p web`** con `ReferenceError: window is not defined`. **Regla:** guard con `typeof window !== "undefined"` todo acceso al DOM/Web Storage en código que corra en el render inicial. En `sessionStorage.ts` el branch web es no-op cuando no hay window (no hay sesión que recuperar en SSR; el cliente la lee al hidratar). El TSC no atrapa esto — solo se ve al exportar.
+15. **`numColumns` en `FlatList` requiere remount al cambiar**: si haces el feed responsive (2 col móvil → 4 col escritorio) tienes que pasar `key={\`cols-${n}\`}` para forzar el remount; cambiar `numColumns` en caliente lanza warning de RN y no toma efecto. Patrón usado en feed, favoritos y categoría.
+16. **Ancho máximo en PWA sin romper móvil**: usar **siempre** `useWebMaxWidth(n)` de `src/lib/responsive.ts` (devuelve `null` si `Platform.OS !== "web"` o si `width < 768`). Mezclarlo en el `contentContainerStyle` del scroll y en las barras header/footer fijas. **No** introducir colores ni layouts solo-web — un iPhone (~390px) debe ver lo mismo que la app nativa.
 
 ---
 
@@ -338,6 +343,13 @@ Editar `src/components/icons.tsx`: Stroke (`Stroke` wrapper) para lineales, Fill
 **Flujo completo funcional**: registro → login → publicar (T&C + form + 3 fotos + modal) → admin aprueba/rechaza desde detalle de moderación → aparece en Explorar (mixto veh+prop) y en su categoría → detalle con propietario real, teléfono y WhatsApp link. El dueño ve sus publicaciones en "Mis publicaciones" con badge de estado y puede editarlas (vuelven a `pending_approval`). Auth real con Supabase Auth, sesión persistida en AsyncStorage. Storage real: fotos suben a bucket `publicaciones`.
 
 **Funcionalidades recientes**:
+- **Fase 2 PWA (en curso, §6–§10 del plan)**: el mismo código exporta a `dist/` como PWA estática (`web.output: "static"` en `app.json`). Stack web:
+  - `app/+html.tsx` = HTML root con `<head>` PWA (manifest, theme-color esmeralda, apple-touch-icon) + registro del SW.
+  - `public/manifest.json` (Milink, `#10B981`/`#0F1115`) + `public/sw.js` (cache-first app shell + SWR imágenes Supabase; **NO** cachea `/auth/`,`/rest/`,`/realtime/`) + `public/icons/{192,512,maskable-512}.png` generados desde `assets/icon1.png` con `@expo/image-utils`.
+  - `src/lib/sessionStorage.ts` = SecureStore nativo (chunked) | AsyncStorage web | no-op SSR.
+  - `src/lib/responsive.ts` = `useWebMaxWidth(n)` + `useCardColumns()` (breakpoint 768px → móvil/nativo intacto).
+  - Splash animado se salta en web (`Platform.OS === "web"` en `_layout.tsx`).
+  - Pendiente (§11): despliegue en Vercel/Cloudflare. Iconos PWA (`public/icons/`) y `dist/` ya quedan listos para CDN estático.
 - **"Mis publicaciones"**: listado del dueño con badges (En revisión / Aprobada / Rechazada) + form unificado de edición para vehículo y propiedad (precarga datos, sube solo fotos nuevas, status → pending_approval). Accesible desde Perfil y Drawer.
 - **Detalle de moderación admin**: carrusel de todas las fotos, todos los campos del formulario, bloque de teléfono con botón WhatsApp, botones aprobar/rechazar. Listado admin pasó a ser solo navegación (card → detalle), sin botones inline.
 - **BeneficiosCarousel rediseñado**: gradiente diagonal "Atardecer" (ámbar → coral) con `expo-linear-gradient` + peek manual (sin auto-scroll) que muestra las cards vecinas asomadas para invitar a deslizar.

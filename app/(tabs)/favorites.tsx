@@ -23,6 +23,7 @@ import {
 } from "../../src/services/feed";
 import type { Disponible } from "../../src/data/mock";
 import { COLORS } from "../../src/theme/colors";
+import { useCardColumns, useWebMaxWidth } from "../../src/lib/responsive";
 
 type ItemFavorito =
   | { kind: "vehiculo"; data: Disponible; addedAt: number }
@@ -32,6 +33,8 @@ export default function Favoritos() {
   const router = useRouter();
   const tabBarH = useTabBarHeight();
   const { favoritos, loading: loadingFav } = useFavoritos();
+  const cols = useCardColumns();
+  const webMax = useWebMaxWidth(1120);
 
   const vehiculoIds = useMemo(
     () => favoritos.filter((f) => f.tipo === "vehiculo").map((f) => f.id),
@@ -138,14 +141,16 @@ export default function Favoritos() {
         />
       ) : (
         <FlatList
+          key={`fav-cols-${cols}`}
           data={items}
           keyExtractor={(item) => `${item.kind}-${item.data.id}`}
-          numColumns={2}
+          numColumns={cols}
           columnWrapperStyle={{ gap: 12, paddingHorizontal: 20 }}
           contentContainerStyle={{
             gap: 12,
             paddingTop: 8,
             paddingBottom: tabBarH + 16,
+            ...(webMax ?? {}),
           }}
           showsVerticalScrollIndicator={false}
           refreshControl={

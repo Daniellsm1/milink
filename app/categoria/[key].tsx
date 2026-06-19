@@ -24,6 +24,7 @@ import type {
   PropiedadTipo,
   VehiculoCategoria,
 } from "../../src/types/database";
+import { useCardColumns, useWebMaxWidth } from "../../src/lib/responsive";
 
 // Mapeo de las 6 categorías a su modo.
 const ES_VEHICULO: Record<CategoriaKey, boolean> = {
@@ -61,6 +62,9 @@ export default function CategoriaScreen() {
   const router = useRouter();
   const categoriaKey = (key ?? "carros") as CategoriaKey;
   const esVehiculo = ES_VEHICULO[categoriaKey];
+  const cols = useCardColumns();
+  const webMaxGrid = useWebMaxWidth(1120);
+  const webMaxList = useWebMaxWidth(760);
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [filtrosVeh, setFiltrosVeh] = useState<FiltrosVehiculo>({
@@ -144,11 +148,12 @@ export default function CategoriaScreen() {
         </View>
       ) : esVehiculo ? (
         <FlatList
+          key={`cat-cols-${cols}`}
           data={vehiculosQuery.data ?? []}
           keyExtractor={(v) => v.id}
-          numColumns={2}
+          numColumns={cols}
           columnWrapperStyle={{ gap: 12, paddingHorizontal: 20 }}
-          contentContainerStyle={{ gap: 12, paddingVertical: 16 }}
+          contentContainerStyle={{ gap: 12, paddingVertical: 16, ...(webMaxGrid ?? {}) }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <VehicleCard
@@ -162,7 +167,7 @@ export default function CategoriaScreen() {
         <FlatList
           data={propiedadesQuery.data ?? []}
           keyExtractor={(p) => p.id}
-          contentContainerStyle={{ gap: 12, padding: 16 }}
+          contentContainerStyle={{ gap: 12, padding: 16, ...(webMaxList ?? {}) }}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <Pressable

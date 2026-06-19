@@ -5,6 +5,7 @@ import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { Asset } from "expo-asset";
 import Markdown from "react-native-markdown-display";
 import { COLORS, FONTS } from "../theme/colors";
+import { useWebMaxWidth } from "../lib/responsive";
 
 type Props = {
   source: number; // resultado de require("...md")
@@ -108,6 +109,7 @@ const markdownStyles = {
 export function MarkdownDoc({ source }: Props) {
   const [contenido, setContenido] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  const webMax = useWebMaxWidth(760);
 
   useEffect(() => {
     let mounted = true;
@@ -156,6 +158,7 @@ export function MarkdownDoc({ source }: Props) {
         paddingHorizontal: 20,
         paddingTop: 12,
         paddingBottom: 40,
+        ...(webMax ?? {}),
       }}
       showsVerticalScrollIndicator={false}
     >
