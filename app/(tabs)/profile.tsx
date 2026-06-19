@@ -11,11 +11,15 @@ import {
 } from "../../src/components/icons";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
 import { COLORS } from "../../src/theme/colors";
+import { useEliminarCuenta } from "../../src/lib/eliminarCuentaFlow";
+
+const DANGER = "#DC2626";
 
 export default function Perfil() {
   const router = useRouter();
   const { user, signOut } = useSession();
   const tabBarH = useTabBarHeight();
+  const eliminarCuenta = useEliminarCuenta();
 
   if (!user) {
     return (
@@ -111,8 +115,20 @@ export default function Perfil() {
               Cerrar sesión
             </Text>
           </Pressable>
+          <Pressable
+            onPress={eliminarCuenta.trigger}
+            accessibilityRole="button"
+            accessibilityLabel="Eliminar mi cuenta"
+            className="rounded-2xl px-6 py-4 items-center border"
+            style={{ borderColor: DANGER }}
+          >
+            <Text className="font-quicksand-bold" style={{ color: DANGER }}>
+              Eliminar mi cuenta
+            </Text>
+          </Pressable>
         </View>
       </ScrollView>
+      {eliminarCuenta.modal}
     </SafeAreaView>
   );
 }

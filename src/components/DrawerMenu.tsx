@@ -22,6 +22,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { COLORS } from "../theme/colors";
 import { useSession } from "../lib/auth";
+import { useEliminarCuenta } from "../lib/eliminarCuentaFlow";
 import {
   ChevronRight,
   ClipboardList,
@@ -32,6 +33,7 @@ import {
   LogOut,
   ShieldCheck,
   Sparkles,
+  Trash,
   User,
   X,
   type IconProps,
@@ -82,6 +84,7 @@ const CERRAR_SESION_COLOR = "#DC2626";
 export function DrawerMenu({ visible, onClose }: Props) {
   const router = useRouter();
   const { user, session, signOut } = useSession();
+  const eliminarCuenta = useEliminarCuenta();
 
   // El Modal solo se desmonta cuando termina la animación de salida.
   const [mounted, setMounted] = useState(visible);
@@ -268,9 +271,31 @@ export function DrawerMenu({ visible, onClose }: Props) {
             })}
           </ScrollView>
 
-          {/* Footer: cerrar sesión */}
+          {/* Footer: eliminar cuenta + cerrar sesión */}
           {session ? (
             <View className="border-t border-line">
+              <Pressable
+                onPress={() => {
+                  // Cerramos el drawer primero para que el Alert/modal del flujo
+                  // se monte por encima sin pelearse con el panel.
+                  onClose();
+                  setTimeout(eliminarCuenta.trigger, ANIM_DURATION);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Eliminar mi cuenta"
+                className="flex-row items-center gap-3 px-5"
+                style={{ paddingVertical: 16 }}
+              >
+                <View className="w-7 items-center">
+                  <Trash size={22} color={CERRAR_SESION_COLOR} />
+                </View>
+                <Text
+                  className="font-quicksand-semibold text-[14.5px]"
+                  style={{ color: CERRAR_SESION_COLOR }}
+                >
+                  Eliminar mi cuenta
+                </Text>
+              </Pressable>
               <Pressable
                 onPress={cerrarSesion}
                 accessibilityRole="button"
@@ -292,6 +317,7 @@ export function DrawerMenu({ visible, onClose }: Props) {
           ) : null}
         </SafeAreaView>
       </Animated.View>
+      {eliminarCuenta.modal}
     </Modal>
   );
 }

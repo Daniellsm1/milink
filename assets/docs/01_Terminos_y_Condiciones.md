@@ -88,6 +88,14 @@ d) Suplantar la identidad de terceros, acosar a otros Usuarios o publicar conten
 
 La detección de cualquiera de estas conductas dará lugar a la **eliminación inmediata** del anuncio y al **bloqueo del Usuario**, sin derecho a indemnización, sin perjuicio de las acciones legales que correspondan.
 
+### 6.1. Reporte y bloqueo de contenido
+
+a) **Reportar:** cualquier Usuario puede reportar una publicación que considere objetable directamente desde el botón **"Reportar publicación"** disponible en la pantalla de detalle del Bien. El equipo de moderación de MiLink revisará el reporte y, si procede, removerá la publicación en un plazo objetivo de **24 a 48 horas** hábiles desde su recepción.
+
+b) **Bloquear:** desde la misma pantalla de detalle, el Usuario puede **bloquear** al Propietario. Una vez bloqueado, no volverá a ver publicaciones de ese Usuario en el feed de la Plataforma.
+
+c) El abuso del sistema de reportes (reportes falsos reiterados, dirigidos a perjudicar a un competidor, etc.) podrá ser causal de suspensión o eliminación de la cuenta del reportante.
+
 ---
 
 ## 7. Obligaciones entre Usuarios

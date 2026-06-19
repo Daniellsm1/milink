@@ -551,3 +551,21 @@ export const LogOut = (p: IconProps) => (
     <Line x1="20" y1="12" x2="9" y2="12" />
   </Stroke>
 );
+
+// Bandera — "Reportar publicación"
+export const Flag = (p: IconProps) => (
+  <Stroke {...p}>
+    <Path d="M4 21V4" />
+    <Path d="M4 4h12.5l-2 4 2 4H4" />
+  </Stroke>
+);
+
+// Persona con cruz — "Bloquear usuario"
+export const UserX = (p: IconProps) => (
+  <Stroke {...p}>
+    <Path d="M14 19v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <Circle cx="8" cy="7" r="4" />
+    <Line x1="17" y1="8" x2="22" y2="13" />
+    <Line x1="22" y1="8" x2="17" y2="13" />
+  </Stroke>
+);

@@ -15,37 +15,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { supabase } from "../../src/lib/supabase";
 import {
-  AppleIcon,
   ChevronLeft,
   Eye,
   EyeOff,
-  FacebookIcon,
-  GoogleIcon,
   Lock,
   Mail,
 } from "../../src/components/icons";
 import { COLORS } from "../../src/theme/colors";
-
-function SocialButton({
-  label,
-  onPress,
-  children,
-}: {
-  label: string;
-  onPress: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      className="w-14 h-14 rounded-full items-center justify-center bg-white border border-line active:opacity-70"
-    >
-      {children}
-    </Pressable>
-  );
-}
 
 export default function Login() {
   const router = useRouter();
@@ -70,13 +46,6 @@ export default function Login() {
       return;
     }
     router.back();
-  };
-
-  const handleSocial = (_provider: "google" | "facebook" | "apple") => {
-    Alert.alert(
-      "Próximamente",
-      "El inicio de sesión con redes sociales estará disponible pronto."
-    );
   };
 
   return (
@@ -192,27 +161,6 @@ export default function Login() {
                 </Text>
               )}
             </Pressable>
-          </View>
-
-          {/* Divisor social */}
-          <Text className="text-[13px] text-muted font-quicksand-medium text-center mt-8 mb-4">
-            O inicia sesión con plataformas sociales
-          </Text>
-
-          {/* Botones sociales */}
-          <View className="flex-row items-center justify-center gap-4">
-            <SocialButton label="Google" onPress={() => handleSocial("google")}>
-              <GoogleIcon size={24} />
-            </SocialButton>
-            <SocialButton
-              label="Facebook"
-              onPress={() => handleSocial("facebook")}
-            >
-              <FacebookIcon size={26} />
-            </SocialButton>
-            <SocialButton label="Apple" onPress={() => handleSocial("apple")}>
-              <AppleIcon size={24} color={COLORS.text} />
-            </SocialButton>
           </View>
 
           {/* Link registro */}

@@ -1,6 +1,7 @@
 // Servicio del feed público: vehículos y propiedades aprobados desde Supabase.
 // Soporta filtros opcionales (precio, marca, ciudad, combustible, categoría, tipo).
 import { supabase } from "../lib/supabase";
+import { listarBloqueados } from "./bloqueos";
 import type { Disponible, NuevaEntrada } from "../data/mock";
 import type {
   CombustibleTipo,
@@ -9,6 +10,11 @@ import type {
   VehiculoCategoria,
   VehiculoRow,
 } from "../types/database";
+
+// PostgREST espera "(uuid1,uuid2,...)" para el operador in/not-in.
+function clausulaIds(ids: string[]): string {
+  return `(${ids.join(",")})`;
+}
 
 // ── Filtros de vehículos ─────────────────────────────────────────────
 export type FiltrosVehiculo = {
@@ -63,6 +69,7 @@ export async function listarVehiculosAprobados(
   filtros: FiltrosVehiculo = {},
   limit = 50
 ): Promise<Disponible[]> {
+  const bloqueados = await listarBloqueados();
   let q = supabase
     .from("vehiculos")
     .select(
@@ -79,6 +86,7 @@ export async function listarVehiculosAprobados(
     q = q.gte("precio_alquiler_diario", filtros.precioMin);
   if (typeof filtros.precioMax === "number")
     q = q.lte("precio_alquiler_diario", filtros.precioMax);
+  if (bloqueados.length > 0) q = q.not("usuario_id", "in", clausulaIds(bloqueados));
 
   const { data, error } = await q
     .order("created_at", { ascending: false })
@@ -157,6 +165,7 @@ export async function listarPropiedadesAprobadas(
   filtros: FiltrosPropiedad = {},
   limit = 50
 ): Promise<PropiedadListado[]> {
+  const bloqueados = await listarBloqueados();
   let q = supabase
     .from("propiedades")
     .select(
@@ -173,6 +182,7 @@ export async function listarPropiedadesAprobadas(
     q = q.lte("precio_alquiler_diario", filtros.precioMax);
   if (typeof filtros.huespedesMin === "number")
     q = q.gte("capacidad_huespedes", filtros.huespedesMin);
+  if (bloqueados.length > 0) q = q.not("usuario_id", "in", clausulaIds(bloqueados));
 
   const { data, error } = await q
     .order("created_at", { ascending: false })
@@ -242,23 +252,32 @@ export async function buscarMixto(
   const q = query.trim().replace(/[,()%]/g, "");
   if (!q) return [];
 
+  const bloqueados = await listarBloqueados();
+  const vehBase = supabase
+    .from("vehiculos")
+    .select(SELECT_VEHICULO_BUSQUEDA)
+    .eq("status", "approved")
+    .or(
+      `marca.ilike.%${q}%,modelo.ilike.%${q}%,ciudad_entrega_principal.ilike.%${q}%`
+    );
+  const propBase = supabase
+    .from("propiedades")
+    .select(SELECT_PROPIEDAD_BUSQUEDA)
+    .eq("status", "approved")
+    .or(`titulo.ilike.%${q}%,ciudad_municipio.ilike.%${q}%`);
+
+  const vehFinal =
+    bloqueados.length > 0
+      ? vehBase.not("usuario_id", "in", clausulaIds(bloqueados))
+      : vehBase;
+  const propFinal =
+    bloqueados.length > 0
+      ? propBase.not("usuario_id", "in", clausulaIds(bloqueados))
+      : propBase;
+
   const [vRes, pRes] = await Promise.all([
-    supabase
-      .from("vehiculos")
-      .select(SELECT_VEHICULO_BUSQUEDA)
-      .eq("status", "approved")
-      .or(
-        `marca.ilike.%${q}%,modelo.ilike.%${q}%,ciudad_entrega_principal.ilike.%${q}%`
-      )
-      .order("created_at", { ascending: false })
-      .limit(limit),
-    supabase
-      .from("propiedades")
-      .select(SELECT_PROPIEDAD_BUSQUEDA)
-      .eq("status", "approved")
-      .or(`titulo.ilike.%${q}%,ciudad_municipio.ilike.%${q}%`)
-      .order("created_at", { ascending: false })
-      .limit(limit),
+    vehFinal.order("created_at", { ascending: false }).limit(limit),
+    propFinal.order("created_at", { ascending: false }).limit(limit),
   ]);
 
   if (vRes.error) throw new Error(vRes.error.message);
@@ -282,23 +301,32 @@ export async function buscarMixto(
 export async function listarNuevasEntradas(limit = 5): Promise<NuevaEntrada[]> {
   // Pedimos un poco más de cada lado y luego mezclamos para acertar mejor el "más reciente".
   const fetchN = Math.max(limit, 5);
+  const bloqueados = await listarBloqueados();
+  const vehBase = supabase
+    .from("vehiculos")
+    .select(
+      "id, marca, modelo, ciudad_entrega_principal, precio_alquiler_diario, imagenes, categoria, tipo_combustible, created_at"
+    )
+    .eq("status", "approved");
+  const propBase = supabase
+    .from("propiedades")
+    .select(
+      "id, titulo, ciudad_municipio, precio_alquiler_diario, imagenes, tipo_propiedad, created_at"
+    )
+    .eq("status", "approved");
+
+  const vehFinal =
+    bloqueados.length > 0
+      ? vehBase.not("usuario_id", "in", clausulaIds(bloqueados))
+      : vehBase;
+  const propFinal =
+    bloqueados.length > 0
+      ? propBase.not("usuario_id", "in", clausulaIds(bloqueados))
+      : propBase;
+
   const [vRes, pRes] = await Promise.all([
-    supabase
-      .from("vehiculos")
-      .select(
-        "id, marca, modelo, ciudad_entrega_principal, precio_alquiler_diario, imagenes, categoria, tipo_combustible, created_at"
-      )
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .limit(fetchN),
-    supabase
-      .from("propiedades")
-      .select(
-        "id, titulo, ciudad_municipio, precio_alquiler_diario, imagenes, tipo_propiedad, created_at"
-      )
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .limit(fetchN),
+    vehFinal.order("created_at", { ascending: false }).limit(fetchN),
+    propFinal.order("created_at", { ascending: false }).limit(fetchN),
   ]);
 
   if (vRes.error) throw new Error(vRes.error.message);

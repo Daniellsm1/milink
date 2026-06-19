@@ -2,14 +2,18 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Linking,
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
   Share,
   Text,
+  TextInput,
   View,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import Animated, { FadeIn, Keyframe } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,6 +23,7 @@ import {
   Calendar,
   Cama,
   ChevronLeft,
+  Flag,
   Fuel,
   Gauge,
   Heart,
@@ -30,6 +35,7 @@ import {
   Settings,
   Share2,
   Star,
+  UserX,
   WhatsApp,
 } from "../../src/components/icons";
 import { Avatar } from "../../src/components/Avatar";
@@ -38,6 +44,11 @@ import {
   fetchDetalleById,
   type CaracteristicaIcono,
 } from "../../src/data/detail";
+import { useSession } from "../../src/lib/auth";
+import { reportar } from "../../src/services/reportes";
+import { bloquearUsuario } from "../../src/services/bloqueos";
+
+const DANGER = "#DC2626";
 
 // Animación "hero": la imagen del detalle aparece con fade + un leve zoom,
 // evocando un shared element (la tarjeta que "crece" hacia el detalle).
@@ -66,6 +77,8 @@ export default function DetalleVehiculo() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user } = useSession();
+  const queryClient = useQueryClient();
 
   const detalleQuery = useQuery({
     queryKey: ["detalle", id],
@@ -76,6 +89,104 @@ export default function DetalleVehiculo() {
   const [favorito, setFavorito] = useState(false);
   const [carruselW, setCarruselW] = useState(0);
   const [indice, setIndice] = useState(0);
+  const [reportVisible, setReportVisible] = useState(false);
+  const [motivo, setMotivo] = useState("");
+  const [motivoError, setMotivoError] = useState<string | null>(null);
+
+  const reportMutation = useMutation({
+    mutationFn: (motivoTexto: string) => {
+      if (!item?.tipo || !item.id) throw new Error("Publicación inválida.");
+      return reportar({ tipo: item.tipo, objetoId: item.id, motivo: motivoTexto });
+    },
+    onSuccess: () => {
+      setReportVisible(false);
+      setMotivo("");
+      Alert.alert(
+        "Reporte enviado",
+        "Gracias por avisarnos. Revisaremos esta publicación en las próximas 24–48 horas."
+      );
+    },
+    onError: (e) => {
+      setMotivoError(e instanceof Error ? e.message : "No se pudo enviar el reporte.");
+    },
+  });
+
+  const bloquearMutation = useMutation({
+    mutationFn: (usuarioId: string) => bloquearUsuario(usuarioId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mixto-aprobado"] });
+      queryClient.invalidateQueries({ queryKey: ["nuevas-entradas"] });
+      queryClient.invalidateQueries({ queryKey: ["vehiculos-aprobados"] });
+      queryClient.invalidateQueries({ queryKey: ["propiedades-aprobadas"] });
+      queryClient.invalidateQueries({ queryKey: ["categoria"] });
+      router.back();
+      setTimeout(() => {
+        Alert.alert(
+          "Usuario bloqueado",
+          "No volverás a ver publicaciones de este usuario."
+        );
+      }, 200);
+    },
+    onError: (e) => {
+      Alert.alert(
+        "No se pudo bloquear",
+        e instanceof Error ? e.message : "Error desconocido."
+      );
+    },
+  });
+
+  const exigirSesion = (accion: string): boolean => {
+    if (user) return true;
+    Alert.alert(
+      "Inicia sesión",
+      `Necesitas una cuenta para ${accion}.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Iniciar sesión",
+          onPress: () => router.push("/auth/login"),
+        },
+      ]
+    );
+    return false;
+  };
+
+  const abrirReporte = () => {
+    if (!item?.tipo) return; // mock o publicación no real
+    if (!exigirSesion("reportar")) return;
+    setMotivo("");
+    setMotivoError(null);
+    setReportVisible(true);
+  };
+
+  const enviarReporte = () => {
+    const limpio = motivo.trim();
+    if (limpio.length < 5 || limpio.length > 500) {
+      setMotivoError("El motivo debe tener entre 5 y 500 caracteres.");
+      return;
+    }
+    setMotivoError(null);
+    reportMutation.mutate(limpio);
+  };
+
+  const confirmarBloqueo = () => {
+    if (!item?.propietario.id) return;
+    if (!exigirSesion("bloquear usuarios")) return;
+    Alert.alert(
+      "¿Bloquear a este usuario?",
+      "No verás más publicaciones suyas en la app. Puedes desbloquearlo después.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Bloquear",
+          style: "destructive",
+          onPress: () => {
+            if (item.propietario.id) bloquearMutation.mutate(item.propietario.id);
+          },
+        },
+      ]
+    );
+  };
 
   if (detalleQuery.isLoading) {
     return (
@@ -226,6 +337,17 @@ export default function DetalleVehiculo() {
             >
               <Share2 size={20} color={COLORS.text} />
             </Pressable>
+            {item.tipo ? (
+              <Pressable
+                onPress={abrirReporte}
+                accessibilityRole="button"
+                accessibilityLabel="Reportar publicación"
+                className="w-11 h-11 rounded-2xl items-center justify-center bg-white"
+                style={shadow}
+              >
+                <Flag size={20} color={DANGER} />
+              </Pressable>
+            ) : null}
           </View>
         </View>
 
@@ -292,7 +414,7 @@ export default function DetalleVehiculo() {
           <Text className="font-quicksand-bold text-[18px] text-ink mt-6 mb-3">
             Propietario
           </Text>
-          <View className="flex-row items-center gap-3 mb-4">
+          <View className="flex-row items-center gap-3 mb-2">
             <Avatar size={52} />
             <View>
               <Text className="font-quicksand-bold text-[16px] text-ink">
@@ -309,6 +431,23 @@ export default function DetalleVehiculo() {
               </View>
             </View>
           </View>
+          {item.propietario.id ? (
+            <Pressable
+              onPress={confirmarBloqueo}
+              accessibilityRole="button"
+              accessibilityLabel="Bloquear a este usuario"
+              hitSlop={8}
+              className="flex-row items-center gap-2 mb-4"
+            >
+              <UserX size={16} color={DANGER} />
+              <Text
+                className="font-quicksand-semibold text-[13.5px]"
+                style={{ color: DANGER }}
+              >
+                Bloquear a este usuario
+              </Text>
+            </Pressable>
+          ) : null}
         </Animated.View>
       </ScrollView>
 
@@ -344,6 +483,98 @@ export default function DetalleVehiculo() {
           </Text>
         </Pressable>
       </View>
+
+      {/* Modal de reporte */}
+      <Modal
+        visible={reportVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() =>
+          !reportMutation.isPending && setReportVisible(false)
+        }
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              justifyContent: "center",
+              padding: 24,
+            }}
+          >
+            <View
+              className="rounded-2xl bg-white p-6 gap-3"
+              style={{ maxWidth: 420, width: "100%", alignSelf: "center" }}
+            >
+              <Text className="font-quicksand-bold text-[18px] text-ink">
+                Reportar publicación
+              </Text>
+              <Text className="text-[13.5px] text-muted font-quicksand-medium leading-5">
+                Cuéntanos qué hay de objetable en esta publicación. La revisamos
+                en 24–48 horas.
+              </Text>
+              <TextInput
+                value={motivo}
+                onChangeText={(v) => {
+                  setMotivo(v);
+                  if (motivoError) setMotivoError(null);
+                }}
+                placeholder="Motivo (mín. 5 caracteres)"
+                placeholderTextColor={COLORS.muted}
+                multiline
+                numberOfLines={4}
+                maxLength={500}
+                editable={!reportMutation.isPending}
+                className="rounded-2xl px-4 py-3 bg-[#F1F5F9] text-[14.5px] text-ink font-quicksand-medium"
+                style={{
+                  minHeight: 110,
+                  textAlignVertical: "top",
+                  ...(Platform.OS === "web" ? { outlineWidth: 0 } : {}),
+                }}
+              />
+              {motivoError ? (
+                <Text
+                  className="text-[13px] font-quicksand-semibold"
+                  style={{ color: DANGER }}
+                >
+                  {motivoError}
+                </Text>
+              ) : null}
+              <View className="flex-row gap-3 mt-2">
+                <Pressable
+                  onPress={() => setReportVisible(false)}
+                  disabled={reportMutation.isPending}
+                  className="flex-1 rounded-2xl px-4 py-3 items-center border border-line"
+                >
+                  <Text className="text-ink font-quicksand-semibold">
+                    Cancelar
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={enviarReporte}
+                  disabled={reportMutation.isPending}
+                  className="flex-1 rounded-2xl px-4 py-3 items-center"
+                  style={{
+                    backgroundColor: DANGER,
+                    opacity: reportMutation.isPending ? 0.7 : 1,
+                  }}
+                >
+                  {reportMutation.isPending ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text className="text-white font-quicksand-bold">
+                      Enviar
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }

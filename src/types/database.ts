@@ -185,6 +185,57 @@ export type UsuarioRegistrado = {
   publicaciones: PublicacionResumen[];
 };
 
+// ─── UGC: reportes y bloqueos ──────────────────────────────────────────
+export type ReporteTipo = "vehiculo" | "propiedad";
+
+export type ReporteRow = {
+  id: string;
+  reportante_id: string;
+  tipo: ReporteTipo;
+  objeto_id: string;
+  motivo: string;
+  resuelto: boolean;
+  created_at: string;
+};
+
+export type ReporteInsert = {
+  id?: string;
+  reportante_id: string;
+  tipo: ReporteTipo;
+  objeto_id: string;
+  motivo: string;
+  resuelto?: boolean;
+  created_at?: string;
+};
+
+export type ReporteUpdate = Partial<ReporteInsert>;
+
+export type BloqueoRow = {
+  bloqueador_id: string;
+  bloqueado_id: string;
+  created_at: string;
+};
+
+export type BloqueoInsert = {
+  bloqueador_id: string;
+  bloqueado_id: string;
+  created_at?: string;
+};
+
+export type BloqueoUpdate = Partial<BloqueoInsert>;
+
+export type ReporteAdminRow = {
+  id: string;
+  tipo: ReporteTipo;
+  objeto_id: string;
+  motivo: string;
+  resuelto: boolean;
+  created_at: string;
+  reportante_email: string;
+  resumen: string | null;
+  objeto_status: string | null;
+};
+
 // Forma compatible con supabase-js (createClient<Database>())
 export type Database = {
   public: {
@@ -207,6 +258,18 @@ export type Database = {
         Update: ResenaUpdate;
         Relationships: [];
       };
+      reportes: {
+        Row: ReporteRow;
+        Insert: ReporteInsert;
+        Update: ReporteUpdate;
+        Relationships: [];
+      };
+      bloqueos: {
+        Row: BloqueoRow;
+        Insert: BloqueoInsert;
+        Update: BloqueoUpdate;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -218,6 +281,14 @@ export type Database = {
         Args: { p_user_id: string };
         Returns: undefined;
       };
+      eliminar_mi_cuenta: {
+        Args: Record<string, never>;
+        Returns: undefined;
+      };
+      admin_listar_reportes: {
+        Args: Record<string, never>;
+        Returns: ReporteAdminRow[];
+      };
     };
     Enums: {
       transmision_tipo: TransmisionTipo;
@@ -225,6 +296,7 @@ export type Database = {
       vehiculo_categoria: VehiculoCategoria;
       propiedad_tipo: PropiedadTipo;
       publicacion_status: PublicacionStatus;
+      reporte_tipo: ReporteTipo;
     };
     CompositeTypes: Record<string, never>;
   };

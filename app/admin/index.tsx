@@ -14,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSession } from "../../src/lib/auth";
 import { esAdmin } from "../../src/lib/admins";
 import { COLORS } from "../../src/theme/colors";
-import { ChevronLeft, ChevronRight, MapPin } from "../../src/components/icons";
+import { ChevronLeft, ChevronRight, Flag, MapPin } from "../../src/components/icons";
 import { listarPendientes } from "../../src/services/moderacion";
 
 export default function AdminPanel() {
@@ -58,7 +58,7 @@ export default function AdminPanel() {
         >
           <ChevronLeft size={26} color={COLORS.text} />
         </Pressable>
-        <View>
+        <View className="flex-1">
           <Text className="font-quicksand-bold text-[18px] text-ink">
             Panel de moderación
           </Text>
@@ -66,6 +66,18 @@ export default function AdminPanel() {
             Publicaciones pendientes de aprobación
           </Text>
         </View>
+        <Pressable
+          onPress={() => router.push("/admin/reportes")}
+          accessibilityRole="button"
+          accessibilityLabel="Reportes de UGC"
+          hitSlop={8}
+          className="flex-row items-center gap-1.5 rounded-full px-3 h-9 border border-line"
+        >
+          <Flag size={16} color="#DC2626" />
+          <Text className="text-[13px] font-quicksand-bold text-ink">
+            Reportes
+          </Text>
+        </Pressable>
       </View>
 
       {/* Lista */}

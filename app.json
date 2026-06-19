@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "milinkApp",
+    "name": "Milink",
     "slug": "milinkApp",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -22,7 +22,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.danielkmm.milinkApp"
+      "package": "com.danielkmm.milink"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,6 +37,7 @@
       "expo-secure-store",
       "expo-font",
       "expo-asset"
-    ]
+    ],
+    "owner": "danielkmm"
   }
 }
