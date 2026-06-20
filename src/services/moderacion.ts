@@ -74,21 +74,27 @@ export async function listarPendientes(): Promise<PendienteItem[]> {
   );
 }
 
+// Aprobar/rechazar pasan por el RPC `moderar_publicacion` (SECURITY DEFINER,
+// solo authenticated + es_admin()) — ver supabase/migrations/0009. Las
+// policies *_update_admin se eliminaron; un update directo a otras columnas
+// ya no pasa RLS.
 async function cambiarStatus(
   tipo: PendienteTipo,
   id: string,
-  status: PublicacionStatus
+  status: "approved" | "rejected",
+  motivo?: string | null
 ): Promise<void> {
-  const tabla = tipo === "vehiculo" ? "vehiculos" : "propiedades";
-  const { error } = await supabase
-    .from(tabla)
-    .update({ status })
-    .eq("id", id);
+  const { error } = await supabase.rpc("moderar_publicacion", {
+    p_tipo: tipo,
+    p_id: id,
+    p_nuevo_status: status,
+    p_motivo: motivo ?? null,
+  });
   if (error) throw new Error(error.message);
 }
 
 export const aprobar = (tipo: PendienteTipo, id: string) =>
   cambiarStatus(tipo, id, "approved");
 
-export const rechazar = (tipo: PendienteTipo, id: string) =>
-  cambiarStatus(tipo, id, "rejected");
+export const rechazar = (tipo: PendienteTipo, id: string, motivo?: string) =>
+  cambiarStatus(tipo, id, "rejected", motivo);

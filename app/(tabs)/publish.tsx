@@ -1,19 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Asset } from "expo-asset";
 import Markdown from "react-native-markdown-display";
 import { useSession } from "../../src/lib/auth";
 import { Checkbox } from "../../src/components/form/Checkbox";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
-import { TERMINOS_CHECKBOXES } from "../../src/content/terminosPublicacion";
+import {
+  TERMINOS_CHECKBOXES,
+  TERMINOS_TEXTO,
+} from "../../src/content/terminosPublicacion";
 import { COLORS, FONTS } from "../../src/theme/colors";
 import { useWebMaxWidth } from "../../src/lib/responsive";
 
@@ -91,32 +87,7 @@ export default function PublicarLegal() {
   const { user } = useSession();
   const tabBarH = useTabBarHeight();
   const [marcados, setMarcados] = useState<Record<string, boolean>>({});
-  const [contenido, setContenido] = useState<string | null>(null);
-  const [errorCarga, setErrorCarga] = useState(false);
   const webMax = useWebMaxWidth(680);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const asset = Asset.fromModule(
-          require("../../assets/legal/terminos_condiciones_publicacion.md")
-        );
-        await asset.downloadAsync();
-        const uri = asset.localUri ?? asset.uri;
-        if (!uri) throw new Error("Asset URI no disponible");
-        const resp = await fetch(uri);
-        const text = await resp.text();
-        if (mounted) setContenido(text);
-      } catch (e) {
-        console.warn("No se pudo cargar los términos:", e);
-        if (mounted) setErrorCarga(true);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   const todosMarcados = useMemo(
     () => TERMINOS_CHECKBOXES.every((c) => marcados[c.id]),
@@ -146,22 +117,11 @@ export default function PublicarLegal() {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Documento legal — se carga directamente del .md canónico */}
-        <View
-          className="rounded-2xl bg-[#F8FAFC] border border-line p-4 mb-5"
-          style={{ minHeight: 200 }}
-        >
-          {contenido !== null ? (
-            <Markdown style={markdownStyles}>{contenido}</Markdown>
-          ) : errorCarga ? (
-            <Text className="text-[12.5px] text-muted font-quicksand-medium text-center py-12">
-              No se pudo cargar los términos. Cierra y vuelve a abrir esta pantalla.
-            </Text>
-          ) : (
-            <View className="items-center justify-center py-12">
-              <ActivityIndicator size="small" color={COLORS.accent} />
-            </View>
-          )}
+        {/* Documento legal — inline en src/content/terminosPublicacion.ts.
+            Antes se cargaba con expo-asset + fetch, pero fallaba en algunos
+            hosts/builds web. Inline es 100% confiable cross-platform. */}
+        <View className="rounded-2xl bg-[#F8FAFC] border border-line p-4 mb-5">
+          <Markdown style={markdownStyles}>{TERMINOS_TEXTO}</Markdown>
         </View>
 
         {/* Checkboxes obligatorios */}

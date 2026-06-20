@@ -40,6 +40,7 @@ export type VehiculoRow = {
   ciudad_entrega_opcional: string | null;
   telefono_contacto: string | null;
   nombre_propietario: string | null;
+  motivo_rechazo: string | null;
   descripcion: string | null;
   imagenes: string[];
   disponible: boolean;
@@ -75,6 +76,7 @@ export type VehiculoInsert = {
   ciudad_entrega_opcional?: string | null;
   telefono_contacto?: string | null;
   nombre_propietario?: string | null;
+  motivo_rechazo?: string | null;
   descripcion?: string | null;
   imagenes?: string[];
   disponible?: boolean;
@@ -106,6 +108,7 @@ export type PropiedadRow = {
   tiene_zona_bbq: boolean;
   telefono_contacto: string | null;
   nombre_propietario: string | null;
+  motivo_rechazo: string | null;
   imagenes: string[];
   disponible: boolean;
   status: PublicacionStatus;
@@ -134,6 +137,7 @@ export type PropiedadInsert = {
   tiene_zona_bbq?: boolean;
   telefono_contacto?: string | null;
   nombre_propietario?: string | null;
+  motivo_rechazo?: string | null;
   imagenes?: string[];
   disponible?: boolean;
   status?: PublicacionStatus;
@@ -292,6 +296,15 @@ export type Database = {
       obtener_contacto_publicacion: {
         Args: { p_tipo: string; p_id: string };
         Returns: { nombre_propietario: string | null; telefono_contacto: string | null }[];
+      };
+      moderar_publicacion: {
+        Args: {
+          p_tipo: string;
+          p_id: string;
+          p_nuevo_status: string;
+          p_motivo?: string | null;
+        };
+        Returns: undefined;
       };
     };
     Enums: {

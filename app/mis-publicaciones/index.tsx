@@ -227,6 +227,16 @@ function PublicacionCard({
           >
             {item.ciudad} · {formatearPrecio(item.precio_alquiler_diario)}/día
           </Text>
+          {item.status === "rejected" && item.motivo_rechazo ? (
+            <View className="mt-1 rounded-lg bg-red-50 p-3">
+              <Text className="font-quicksand-bold text-[12.5px] text-red-700 mb-1">
+                Motivo del rechazo
+              </Text>
+              <Text className="font-quicksand-medium text-[13px] text-red-700 leading-5">
+                {item.motivo_rechazo}
+              </Text>
+            </View>
+          ) : null}
         </View>
       </Pressable>
 

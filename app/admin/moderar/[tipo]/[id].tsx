@@ -4,10 +4,14 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Linking,
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { Image } from "expo-image";
@@ -72,6 +76,8 @@ export default function ModerarDetalle() {
 
   const [carruselW, setCarruselW] = useState(0);
   const [indice, setIndice] = useState(0);
+  const [motivoVisible, setMotivoVisible] = useState(false);
+  const [motivo, setMotivo] = useState("");
 
   const dataQuery = useQuery<VehiculoRow | PropiedadRow>({
     queryKey: ["admin-moderar", tipo, id],
@@ -85,7 +91,10 @@ export default function ModerarDetalle() {
   const aprobarMut = useMutation({
     mutationFn: () => aprobar(tipo, id),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["pendientes"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["pendientes"] }),
+        queryClient.invalidateQueries({ queryKey: ["mis-publicaciones"] }),
+      ]);
       Alert.alert("Publicación aprobada", "Ya es visible en la app.");
       router.back();
     },
@@ -94,15 +103,26 @@ export default function ModerarDetalle() {
   });
 
   const rechazarMut = useMutation({
-    mutationFn: () => rechazar(tipo, id),
+    mutationFn: (motivoOpt: string | undefined) =>
+      rechazar(tipo, id, motivoOpt),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["pendientes"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["pendientes"] }),
+        queryClient.invalidateQueries({ queryKey: ["mis-publicaciones"] }),
+      ]);
+      setMotivoVisible(false);
+      setMotivo("");
       Alert.alert("Publicación rechazada", "El propietario podrá editarla.");
       router.back();
     },
     onError: (e) =>
       Alert.alert("No se pudo rechazar", e instanceof Error ? e.message : ""),
   });
+
+  const confirmarRechazo = () => {
+    const m = motivo.trim();
+    rechazarMut.mutate(m.length > 0 ? m : undefined);
+  };
 
   const headerOptions = (
     <Stack.Screen
@@ -288,7 +308,10 @@ export default function ModerarDetalle() {
           {/* D) Botones */}
           <View className="flex-row gap-3 mt-6">
             <Pressable
-              onPress={() => rechazarMut.mutate()}
+              onPress={() => {
+                setMotivo("");
+                setMotivoVisible(true);
+              }}
               disabled={rechazarMut.isPending || aprobarMut.isPending}
               accessibilityRole="button"
               accessibilityLabel="Rechazar"
@@ -319,6 +342,83 @@ export default function ModerarDetalle() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Modal de motivo de rechazo (opcional) */}
+      <Modal
+        visible={motivoVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!rechazarMut.isPending) setMotivoVisible(false);
+        }}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              justifyContent: "center",
+              padding: 24,
+            }}
+          >
+            <View
+              className="rounded-2xl bg-white p-6 gap-3"
+              style={{ maxWidth: 420, width: "100%", alignSelf: "center" }}
+            >
+              <Text className="font-quicksand-bold text-[18px] text-ink">
+                Rechazar publicación
+              </Text>
+              <Text className="text-[13.5px] text-muted font-quicksand-medium leading-5">
+                Cuéntale al propietario por qué la rechazaste. Es opcional pero
+                le ayuda a corregir y volver a someterla.
+              </Text>
+              <TextInput
+                value={motivo}
+                onChangeText={setMotivo}
+                placeholder="Motivo (opcional, máx. 500 caracteres)"
+                placeholderTextColor={COLORS.muted}
+                multiline
+                numberOfLines={4}
+                maxLength={500}
+                className="border border-line rounded-xl p-3 text-[14px] text-ink font-quicksand-medium"
+                style={{ minHeight: 100, textAlignVertical: "top" }}
+              />
+              <View className="flex-row gap-2 mt-1">
+                <Pressable
+                  onPress={() => setMotivoVisible(false)}
+                  disabled={rechazarMut.isPending}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancelar rechazo"
+                  className="flex-1 h-12 rounded-full border border-line items-center justify-center active:opacity-70"
+                >
+                  <Text className="font-quicksand-bold text-[14px] text-ink">
+                    Cancelar
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={confirmarRechazo}
+                  disabled={rechazarMut.isPending}
+                  accessibilityRole="button"
+                  accessibilityLabel="Confirmar rechazo"
+                  className="flex-1 h-12 rounded-full items-center justify-center active:opacity-90"
+                  style={{ backgroundColor: "#EF4444" }}
+                >
+                  {rechazarMut.isPending ? (
+                    <ActivityIndicator color={COLORS.white} />
+                  ) : (
+                    <Text className="font-quicksand-bold text-[14px] text-white">
+                      Rechazar
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }

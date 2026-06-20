@@ -15,6 +15,7 @@ export type PublicacionPropia = {
   precio_alquiler_diario: number;
   imagenes: string[];
   status: "pending_approval" | "approved" | "rejected";
+  motivo_rechazo: string | null;
   created_at: string;
   ciudad: string;
 };
@@ -27,14 +28,14 @@ export async function getMisPublicaciones(
       supabase
         .from("vehiculos")
         .select(
-          "id, marca, modelo, ano, precio_alquiler_diario, imagenes, status, created_at, ciudad_entrega_principal"
+          "id, marca, modelo, ano, precio_alquiler_diario, imagenes, status, motivo_rechazo, created_at, ciudad_entrega_principal"
         )
         .eq("usuario_id", userId)
         .order("created_at", { ascending: false }),
       supabase
         .from("propiedades")
         .select(
-          "id, titulo, precio_alquiler_diario, imagenes, status, created_at, ciudad_municipio"
+          "id, titulo, precio_alquiler_diario, imagenes, status, motivo_rechazo, created_at, ciudad_municipio"
         )
         .eq("usuario_id", userId)
         .order("created_at", { ascending: false }),
@@ -51,6 +52,7 @@ export async function getMisPublicaciones(
       precio_alquiler_diario: v.precio_alquiler_diario,
       imagenes: v.imagenes ?? [],
       status: v.status as PublicacionPropia["status"],
+      motivo_rechazo: v.motivo_rechazo ?? null,
       created_at: v.created_at,
       ciudad: v.ciudad_entrega_principal,
     })
@@ -64,6 +66,7 @@ export async function getMisPublicaciones(
       precio_alquiler_diario: p.precio_alquiler_diario,
       imagenes: p.imagenes ?? [],
       status: p.status as PublicacionPropia["status"],
+      motivo_rechazo: p.motivo_rechazo ?? null,
       created_at: p.created_at,
       ciudad: p.ciudad_municipio,
     })
