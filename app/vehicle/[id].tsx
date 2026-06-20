@@ -41,6 +41,7 @@ import {
 import { Avatar } from "../../src/components/Avatar";
 import { COLORS } from "../../src/theme/colors";
 import {
+  fetchContactoPublicacion,
   fetchDetalleById,
   type CaracteristicaIcono,
 } from "../../src/data/detail";
@@ -88,6 +89,17 @@ export default function DetalleVehiculo() {
     enabled: !!id,
   });
   const item = detalleQuery.data;
+
+  // Contacto del propietario (nombre + teléfono): viaja aparte vía RPC y solo
+  // si hay sesión. Para mocks (item.tipo undefined) no se dispara y el bloque
+  // de propietario muestra los valores demo.
+  const contactoQuery = useQuery({
+    queryKey: ["contacto", item?.tipo, item?.id],
+    queryFn: () =>
+      fetchContactoPublicacion(item!.tipo!, item!.id),
+    enabled: !!user && !!item?.tipo && !!item?.id,
+  });
+  const contacto = contactoQuery.data ?? null;
   const [favorito, setFavorito] = useState(false);
   const [carruselW, setCarruselW] = useState(0);
   const [indice, setIndice] = useState(0);
@@ -139,6 +151,17 @@ export default function DetalleVehiculo() {
 
   const exigirSesion = (accion: string): boolean => {
     if (user) return true;
+    // RN-Web ignora los botones de Alert.alert (solo dispara window.alert con
+    // el título). En web usamos window.confirm para ofrecer el "Iniciar sesión".
+    if (Platform.OS === "web") {
+      const ok =
+        typeof window !== "undefined" &&
+        window.confirm(
+          `Inicia sesión\n\nNecesitas una cuenta para ${accion}.\n\n¿Quieres iniciar sesión ahora?`
+        );
+      if (ok) router.push("/auth/login");
+      return false;
+    }
     Alert.alert(
       "Inicia sesión",
       `Necesitas una cuenta para ${accion}.`,
@@ -225,10 +248,34 @@ export default function DetalleVehiculo() {
   };
 
   const reservarPorWhatsApp = async () => {
+    // Auth gate: el teléfono solo viaja al cliente para usuarios autenticados
+    // (RLS column-level + RPC obtener_contacto_publicacion, §2.1 del plan).
+    if (!exigirSesion("contactar al propietario")) return;
+
+    // Mocks (catálogo demo) usan PROPIETARIO_DEMO; publicaciones reales
+    // requieren el contacto resuelto vía RPC.
+    const telefono = item.tipo
+      ? contacto?.telefono
+      : item.propietario.telefono;
+
+    if (!telefono) {
+      if (contactoQuery.isLoading) {
+        Alert.alert(
+          "Cargando contacto",
+          "Estamos preparando el contacto del propietario. Intenta de nuevo en un instante."
+        );
+      } else {
+        Alert.alert(
+          "No pudimos obtener el contacto",
+          "Intenta de nuevo en unos segundos."
+        );
+        contactoQuery.refetch();
+      }
+      return;
+    }
+
     const mensaje = `Hola, estoy interesado en reservar ${item.titulo} visto en la app Milink. ¿Sigue disponible?`;
-    const url = `https://wa.me/${item.propietario.telefono}?text=${encodeURIComponent(
-      mensaje
-    )}`;
+    const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
     try {
       await Linking.openURL(url);
     } catch {
@@ -420,7 +467,9 @@ export default function DetalleVehiculo() {
             <Avatar size={52} />
             <View>
               <Text className="font-quicksand-bold text-[16px] text-ink">
-                {item.propietario.nombre}
+                {item.tipo
+                  ? contacto?.nombre || "Propietario verificado"
+                  : item.propietario.nombre}
               </Text>
               <View className="flex-row items-center gap-1 mt-0.5">
                 <Star size={14} color="#F59E0B" />

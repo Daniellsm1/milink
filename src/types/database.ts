@@ -289,6 +289,10 @@ export type Database = {
         Args: Record<string, never>;
         Returns: ReporteAdminRow[];
       };
+      obtener_contacto_publicacion: {
+        Args: { p_tipo: string; p_id: string };
+        Returns: { nombre_propietario: string | null; telefono_contacto: string | null }[];
+      };
     };
     Enums: {
       transmision_tipo: TransmisionTipo;

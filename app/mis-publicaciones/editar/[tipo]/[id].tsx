@@ -25,6 +25,7 @@ import {
   type FotoEdit,
 } from "../../../../src/components/form/PhotoPickerEdit";
 import { CountryCodeSelect } from "../../../../src/components/form/CountryCodeSelect";
+import { Checkbox } from "../../../../src/components/form/Checkbox";
 import { useSession } from "../../../../src/lib/auth";
 import { subirImagenes } from "../../../../src/services/storage";
 import {
@@ -126,6 +127,10 @@ export default function EditarPublicacion() {
   // Teléfono (ambos tipos)
   const [indicativo, setIndicativo] = useState("+57");
   const [telefono, setTelefono] = useState("");
+  // Consentimiento Habeas Data: precargado en true porque el usuario ya
+  // publicó antes; mantenerlo controlado por si quiere revocarlo.
+  const [consientoContacto, setConsientoContacto] = useState(true);
+  const [consentError, setConsentError] = useState<string | null>(null);
 
   // ── Estado Vehículo ──
   const [vMarca, setVMarca] = useState("");
@@ -258,11 +263,12 @@ export default function EditarPublicacion() {
     !!pBanos.trim();
 
   const puedeGuardar = useMemo(() => {
-    if (!tieneTresFotos || !telefonoOk) return false;
+    if (!tieneTresFotos || !telefonoOk || !consientoContacto) return false;
     return tipo === "vehiculo" ? vehiculoCompleto : propiedadCompleta;
   }, [
     tieneTresFotos,
     telefonoOk,
+    consientoContacto,
     tipo,
     vehiculoCompleto,
     propiedadCompleta,
@@ -273,6 +279,14 @@ export default function EditarPublicacion() {
       Alert.alert("Faltan fotos", "Debes tener exactamente 3 fotografías.");
       return;
     }
+
+    if (!consientoContacto) {
+      setConsentError(
+        "Debes aceptar que tu nombre y teléfono sean visibles para usuarios autenticados."
+      );
+      return;
+    }
+    setConsentError(null);
 
     const parsed =
       tipo === "vehiculo"
@@ -500,7 +514,7 @@ export default function EditarPublicacion() {
           )}
 
           {/* Teléfono de contacto (WhatsApp) */}
-          <View className="mb-4">
+          <View className="mb-2">
             <Text className="text-[13px] text-ink font-quicksand-semibold mb-1.5">
               Teléfono de contacto (WhatsApp)
             </Text>
@@ -521,6 +535,23 @@ export default function EditarPublicacion() {
                 />
               </View>
             </View>
+          </View>
+
+          {/* Consentimiento Habeas Data: solo usuarios autenticados ven el contacto */}
+          <View className="mb-4">
+            <Checkbox
+              checked={consientoContacto}
+              onToggle={() => {
+                setConsientoContacto((v) => !v);
+                if (consentError) setConsentError(null);
+              }}
+              label="Acepto que mi nombre y teléfono sean visibles para usuarios autenticados de Milink que quieran contactarme sobre esta publicación."
+            />
+            {consentError ? (
+              <Text className="text-[12.5px] text-red-600 font-quicksand-medium mt-1">
+                {consentError}
+              </Text>
+            ) : null}
           </View>
 
           {/* Fotos */}

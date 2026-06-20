@@ -19,6 +19,7 @@ import { FormSelect } from "../../src/components/form/FormSelect";
 import { FormToggle } from "../../src/components/form/FormToggle";
 import { PhotoPicker } from "../../src/components/form/PhotoPicker";
 import { CountryCodeSelect } from "../../src/components/form/CountryCodeSelect";
+import { Checkbox } from "../../src/components/form/Checkbox";
 import {
   crearPropiedad,
   crearVehiculo,
@@ -76,6 +77,10 @@ export default function PublicarFormulario() {
   // ── Teléfono de contacto (ambos tipos) ──
   const [indicativo, setIndicativo] = useState("+57");
   const [telefono, setTelefono] = useState("");
+  // Consentimiento explícito para que nombre + teléfono sean visibles a
+  // usuarios autenticados de Milink (Habeas Data, Ley 1581/2012).
+  const [consientoContacto, setConsientoContacto] = useState(false);
+  const [consentError, setConsentError] = useState<string | null>(null);
 
   // ── Estado Vehículo ──
   const [vMarca, setVMarca] = useState("");
@@ -145,15 +150,30 @@ export default function PublicarFormulario() {
   const telefonoOk = !!indicativo && /^\d{7,12}$/.test(telefono.trim());
 
   const puedeGuardar = useMemo(() => {
-    if (!tieneTresFotos || !telefonoOk) return false;
+    if (!tieneTresFotos || !telefonoOk || !consientoContacto) return false;
     return tipo === "vehiculo" ? vehiculoCompleto : propiedadCompleta;
-  }, [tieneTresFotos, telefonoOk, tipo, vehiculoCompleto, propiedadCompleta]);
+  }, [
+    tieneTresFotos,
+    telefonoOk,
+    consientoContacto,
+    tipo,
+    vehiculoCompleto,
+    propiedadCompleta,
+  ]);
 
   const guardar = async () => {
     if (!tieneTresFotos) {
       Alert.alert("Faltan fotos", "Debes adjuntar exactamente 3 fotografías.");
       return;
     }
+
+    if (!consientoContacto) {
+      setConsentError(
+        "Debes aceptar que tu nombre y teléfono sean visibles para usuarios autenticados."
+      );
+      return;
+    }
+    setConsentError(null);
 
     // Validación con Zod según el tipo. Si falla, mostramos errores por campo.
     const parsed =
@@ -363,7 +383,7 @@ export default function PublicarFormulario() {
           )}
 
           {/* Teléfono de contacto (WhatsApp) — ambos tipos */}
-          <View className="mb-4">
+          <View className="mb-2">
             <Text className="text-[13px] text-ink font-quicksand-semibold mb-1.5">
               Teléfono de contacto (WhatsApp)
             </Text>
@@ -384,6 +404,23 @@ export default function PublicarFormulario() {
                 />
               </View>
             </View>
+          </View>
+
+          {/* Consentimiento Habeas Data: solo usuarios autenticados ven el contacto */}
+          <View className="mb-4">
+            <Checkbox
+              checked={consientoContacto}
+              onToggle={() => {
+                setConsientoContacto((v) => !v);
+                if (consentError) setConsentError(null);
+              }}
+              label="Acepto que mi nombre y teléfono sean visibles para usuarios autenticados de Milink que quieran contactarme sobre esta publicación."
+            />
+            {consentError ? (
+              <Text className="text-[12.5px] text-red-600 font-quicksand-medium mt-1">
+                {consentError}
+              </Text>
+            ) : null}
           </View>
 
           {/* Fotos */}

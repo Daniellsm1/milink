@@ -124,7 +124,7 @@ export async function fetchDetalleById(id: string): Promise<DetailItem | null> {
   const { data, error } = await supabase
     .from("vehiculos")
     .select(
-      "id, usuario_id, marca, modelo, ano, ciudad_entrega_principal, ciudad_entrega_opcional, precio_alquiler_diario, tipo_combustible, transmision, numero_sillas, kilometraje_permitido_diario, descripcion, imagenes, telefono_contacto, nombre_propietario"
+      "id, usuario_id, marca, modelo, ano, ciudad_entrega_principal, ciudad_entrega_opcional, precio_alquiler_diario, tipo_combustible, transmision, numero_sillas, kilometraje_permitido_diario, descripcion, imagenes"
     )
     .eq("id", id)
     .eq("status", "approved")
@@ -177,11 +177,13 @@ export async function fetchDetalleById(id: string): Promise<DetailItem | null> {
     ],
     descripcion:
       data.descripcion ?? descripcionVehiculo(data.marca, data.modelo),
+    // nombre y teléfono ya no viajan en el SELECT público (RLS/§2.1).
+    // Se resuelven aparte vía fetchContactoPublicacion() cuando hay sesión.
     propietario: {
       ...PROPIETARIO_DEMO,
       id: data.usuario_id,
-      nombre: data.nombre_propietario ?? PROPIETARIO_DEMO.nombre,
-      telefono: data.telefono_contacto ?? PROPIETARIO_DEMO.telefono,
+      nombre: "",
+      telefono: "",
     },
   };
 }
@@ -191,7 +193,7 @@ async function fetchPropiedad(id: string): Promise<DetailItem | null> {
   const { data, error } = await supabase
     .from("propiedades")
     .select(
-      "id, usuario_id, tipo_propiedad, titulo, descripcion, ciudad_municipio, departamento, precio_alquiler_diario, capacidad_huespedes, numero_habitaciones, numero_camas, numero_banos, imagenes, telefono_contacto, nombre_propietario"
+      "id, usuario_id, tipo_propiedad, titulo, descripcion, ciudad_municipio, departamento, precio_alquiler_diario, capacidad_huespedes, numero_habitaciones, numero_camas, numero_banos, imagenes"
     )
     .eq("id", id)
     .eq("status", "approved")
@@ -216,11 +218,42 @@ async function fetchPropiedad(id: string): Promise<DetailItem | null> {
     descripcion:
       data.descripcion ??
       `${data.titulo} en ${data.ciudad_municipio}, ${data.departamento}. Espacio ideal para tu estadía.`,
+    // nombre y teléfono ya no viajan en el SELECT público (RLS/§2.1).
+    // Se resuelven aparte vía fetchContactoPublicacion() cuando hay sesión.
     propietario: {
       ...PROPIETARIO_DEMO,
       id: data.usuario_id,
-      nombre: data.nombre_propietario ?? PROPIETARIO_DEMO.nombre,
-      telefono: data.telefono_contacto ?? PROPIETARIO_DEMO.telefono,
+      nombre: "",
+      telefono: "",
     },
+  };
+}
+
+// ─── Contacto del propietario (lazy, gated por sesión) ─────────────────
+// La policy de RLS deja leer la fila aprobada pero no la columna telefono_contacto
+// / nombre_propietario al rol `anon` (migración 0008). El RPC SECURITY DEFINER
+// vive en supabase/migrations/0008_pii_contacto_protegida.sql y solo se otorga
+// EXECUTE a `authenticated`.
+export type ContactoPublicacion = {
+  nombre: string;
+  telefono: string;
+};
+
+export async function fetchContactoPublicacion(
+  tipo: "vehiculo" | "propiedad",
+  id: string
+): Promise<ContactoPublicacion | null> {
+  const { data, error } = await supabase.rpc("obtener_contacto_publicacion", {
+    p_tipo: tipo,
+    p_id: id,
+  });
+  if (error || !data || !Array.isArray(data) || data.length === 0) return null;
+  const fila = data[0] as {
+    nombre_propietario: string | null;
+    telefono_contacto: string | null;
+  };
+  return {
+    nombre: fila.nombre_propietario ?? "",
+    telefono: fila.telefono_contacto ?? "",
   };
 }
