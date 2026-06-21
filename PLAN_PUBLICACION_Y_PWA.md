@@ -99,9 +99,7 @@ un scraper puede **cosechar todos los teléfonos**. En Colombia es dato personal
 
 **Opciones (de menor a mayor esfuerzo):**
 - Exponer el teléfono **solo a usuarios autenticados** vía un RPC
-  `obtener_contacto(publicacion_id)` y quitar `telefono_contacto` del `select`
-  público del feed/detalle.
-- O mostrar el teléfono solo al pulsar "Contactar" (lazy + auth gate), no en el
+- mostrar el teléfono solo al pulsar "Contactar" (lazy + auth gate), no en el
   payload inicial.
 - Mínimo: documentar este tratamiento en la Política de Privacidad y obtener
   consentimiento explícito al publicar (checkbox "acepto que mi teléfono será
@@ -136,9 +134,6 @@ al rechazar, o usar URLs firmadas (signed URLs) para contenido no aprobado.
 
 ### 2.6 🟡 Higiene del repo
 
-- La carpeta **`.claude/` no está en `.gitignore`**. No es parte del proyecto
-  (contiene memoria de la sesión de Claude). Añádela a `.gitignore` y ejecuta
-  `git rm -r --cached .claude` para sacarla del índice.
 - El correo del admin (`daniel200430@hotmail.com`) está hardcodeado en
   `admins.ts` y en `0003_admin_policies.sql`. No es un secreto crítico (el gate
   real es server-side) pero a futuro conviene una **tabla `roles`** o un *custom
