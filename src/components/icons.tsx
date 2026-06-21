@@ -92,6 +92,22 @@ export const PlusCircle = (p: IconProps) => (
   </Stroke>
 );
 
+export const Download = (p: IconProps) => (
+  <Stroke {...p}>
+    <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <Polyline points="7 10 12 15 17 10" />
+    <Line x1="12" y1="15" x2="12" y2="3" />
+  </Stroke>
+);
+
+export const IosShare = (p: IconProps) => (
+  <Stroke {...p}>
+    <Path d="M8 6 12 2 16 6" />
+    <Line x1="12" y1="2" x2="12" y2="15" />
+    <Path d="M6 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1" />
+  </Stroke>
+);
+
 export const Fuel = (p: IconProps) => (
   <Stroke {...p}>
     <Line x1="3" y1="22" x2="15" y2="22" />

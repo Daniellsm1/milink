@@ -21,6 +21,7 @@ import { VehicleCard } from "../../src/components/VehicleCard";
 import { PropiedadCard } from "../../src/components/PropiedadCard";
 import { FiltrosSheet } from "../../src/components/FiltrosSheet";
 import { Heart, Menu } from "../../src/components/icons";
+import { InstallPwaButton } from "../../src/components/InstallPwaButton";
 import { DrawerMenu } from "../../src/components/DrawerMenu";
 import { ExplorerSkeleton } from "../../src/components/skeletons";
 import { useTabBarHeight } from "../../src/components/tabBarMetrics";
@@ -197,6 +198,7 @@ export default function Explorar() {
                   </Text>
                 </View>
                 <View className="flex-row items-center gap-2.5">
+                  <InstallPwaButton />
                   <HeaderIconButton
                     label="Favoritos"
                     onPress={() => router.push("/(tabs)/favorites")}
