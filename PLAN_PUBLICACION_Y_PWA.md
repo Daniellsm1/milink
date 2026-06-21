@@ -60,14 +60,6 @@ una **URL accesible públicamente** (sin login) tanto en la ficha de la tienda
 como enlazada dentro de la app. Hospédala (el despliegue de §11 la sirve
 automáticamente) y enlázala desde la ficha y el perfil.
 
-### 1.4 🟠 Formulario "Data safety" (Seguridad de los datos)
-
-Es obligatorio y debe **coincidir** con lo que la app realmente recolecta. Si
-declaras de menos, es causal de suspensión. Milink recolecta: correo, nombre,
-teléfono, fotos, ubicación aproximada (ciudad/departamento) y contenido del
-usuario. Declara todo eso, indica que se comparte con otros usuarios (el teléfono
-y nombre son visibles públicamente), y marca que hay cifrado en tránsito (HTTPS
-de Supabase) y opción de eliminación de cuenta (una vez hecho 1.1).
 
 ### 1.5 🟠 Nivel de API objetivo (target SDK)
 

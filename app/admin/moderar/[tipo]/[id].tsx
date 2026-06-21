@@ -104,7 +104,7 @@ export default function ModerarDetalle() {
 
   const rechazarMut = useMutation({
     mutationFn: (motivoOpt: string | undefined) =>
-      rechazar(tipo, id, motivoOpt),
+      rechazar(tipo, id, dataQuery.data?.imagenes ?? [], motivoOpt),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["pendientes"] }),

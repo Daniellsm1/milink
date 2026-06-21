@@ -31,11 +31,25 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setSession(data.session);
-      setLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) {
+          // Refresh token inválido (ej. proyecto pausado en free tier) →
+          // limpia SecureStore para no repetir el error en cada apertura.
+          supabase.auth.signOut().catch(() => {});
+          setSession(null);
+        } else {
+          setSession(data.session);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        supabase.auth.signOut().catch(() => {});
+        setSession(null);
+        setLoading(false);
+      });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);

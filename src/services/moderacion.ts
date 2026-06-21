@@ -5,6 +5,17 @@
 // es solo UX.
 import { supabase } from "../lib/supabase";
 
+const BUCKET = "publicaciones";
+
+// Extrae el path relativo al bucket a partir de una URL pública de Supabase Storage.
+// Formato: https://<ref>.supabase.co/storage/v1/object/public/publicaciones/<path>
+function urlAPath(url: string): string | null {
+  const marker = `/object/public/${BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(url.slice(idx + marker.length));
+}
+
 export type PendienteTipo = "vehiculo" | "propiedad";
 export type PublicacionStatus = "pending_approval" | "approved" | "rejected";
 
@@ -75,7 +86,7 @@ export async function listarPendientes(): Promise<PendienteItem[]> {
 }
 
 // Aprobar/rechazar pasan por el RPC `moderar_publicacion` (SECURITY DEFINER,
-// solo authenticated + es_admin()) — ver supabase/migrations/0009. Las
+// solo authenticated + es_admin()) — ver supabase/migrations/0009–0010. Las
 // policies *_update_admin se eliminaron; un update directo a otras columnas
 // ya no pasa RLS.
 async function cambiarStatus(
@@ -96,5 +107,22 @@ async function cambiarStatus(
 export const aprobar = (tipo: PendienteTipo, id: string) =>
   cambiarStatus(tipo, id, "approved");
 
-export const rechazar = (tipo: PendienteTipo, id: string, motivo?: string) =>
-  cambiarStatus(tipo, id, "rejected", motivo);
+/**
+ * Rechaza la publicación y borra sus fotos del bucket.
+ * El RPC ya limpia `imagenes = '{}'` en la DB de forma atómica.
+ * El borrado en storage es best-effort: si falla, la DB ya está consistente.
+ * @param imagenes - URLs públicas leídas ANTES de llamar esta función.
+ */
+export async function rechazar(
+  tipo: PendienteTipo,
+  id: string,
+  imagenes: string[],
+  motivo?: string
+): Promise<void> {
+  await cambiarStatus(tipo, id, "rejected", motivo);
+
+  const paths = imagenes.map(urlAPath).filter((p): p is string => p !== null);
+  if (paths.length > 0) {
+    await supabase.storage.from(BUCKET).remove(paths);
+  }
+}

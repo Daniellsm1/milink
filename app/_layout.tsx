@@ -77,6 +77,14 @@ export default function RootLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
+              name="auth/forgot-password"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="auth/reset-password"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
               name="publish/form"
               options={{ headerShown: false }}
             />
