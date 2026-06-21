@@ -41,3 +41,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Herramientas locales de Claude Code (skills, plugins) — NO van al repo (~53MB).
+# Si ya están trackeadas, sácalas del índice una vez:
+#   git rm -r --cached .claude
+.claude/

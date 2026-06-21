@@ -1,296 +1,182 @@
 # Milink — Plan de Publicación en Play Store y Estrategia PWA
 
-> Auditoría técnica y hoja de ruta. Revisión hecha sobre el código real del repo
-> (Expo SDK 54, RN 0.81.5, Supabase). Fecha: junio 2026.
->
-> **Cómo leer este documento:** cada hallazgo tiene una severidad
-> (🔴 bloqueante · 🟠 importante · 🟡 mejora) y, cuando aplica, el archivo
-> exacto donde está el problema y la solución concreta.
+> Hoja de ruta viva. Solo queda lo **pendiente**; lo resuelto está condensado en
+> el §0. Severidad: 🔴 bloqueante · 🟠 importante · 🟡 mejora.
+> Última revisión: junio 2026 (auditoría full-stack sobre el código real).
 
 ---
 
-## 0. Resumen ejecutivo
+## 0. Lo que YA está resuelto (no tocar)
 
-Milink está **mucho más maduro de lo normal** para un proyecto en pre-lanzamiento:
-RLS bien pensado, moderación admin real, tipos estrictos (TSC pasa limpio), key
-`sb_publishable_` correcta (no se filtra `service_role`), operaciones sensibles
-de admin detrás de RPCs `SECURITY DEFINER` gateadas por `es_admin()`, y sesión
-cifrada con SecureStore (nativo) + AsyncStorage (web). La base de seguridad del
-backend y del cliente es sólida.
+**Seguridad / backend**
+- ✅ **PII del propietario protegida** (migración 0008): `telefono_contacto` y
+  `nombre_propietario` ocultos a `anon` (REVOKE column-level); contacto vía RPC
+  `obtener_contacto_publicacion` solo para `authenticated` + checkbox de
+  consentimiento al publicar/editar.
+- ✅ **Moderación por RPC** (migración 0009): `moderar_publicacion` SECURITY
+  DEFINER; eliminadas las policies UPDATE amplias del admin. Motivo de rechazo.
+- ✅ **Fotos de rechazadas eliminadas** (migración 0010): RPC limpia `imagenes`
+  + policy DELETE admin en storage + borrado best-effort desde el cliente.
+- ✅ **Cuota anti-spam** (migración 0011): trigger que bloquea > 5 publicaciones
+  `pending_approval` por usuario.
+- ✅ **Recuperar contraseña**: pantallas `auth/forgot-password` y
+  `auth/reset-password` + deep link `scheme: "milink"` + `resetPasswordForEmail`.
+- ✅ **Refresh token inválido manejado**: `getSession()` con `signOut()` limpio
+  (evita el loop de `AuthApiError` tras pausar/reanudar el proyecto).
+- ✅ **Búsqueda saneada**: `buscarMixto` quita `,()%` antes del `.or()` de
+  PostgREST (sin inyección de filtros).
+- ✅ **UGC moderable** (migración 0007): reportar publicación + bloquear usuario
+  cableados en el detalle; RPC `eliminar_mi_cuenta`. Cumple requisito UGC de Play.
+- ✅ Sesión cifrada (SecureStore chunked nativo / AsyncStorage web), anon key
+  `sb_publishable_`, sin `service_role` en el bundle.
 
-Lo que **bloquea la publicación hoy** no es la calidad del código, son **requisitos
-de política de Google Play** que el proyecto aún no cumple:
+**PWA (Fase 2, §6–§10 + §12)**
+- ✅ Export estático (`web.output: "static"`), `+html.tsx` con meta PWA + SW,
+  `manifest.json`, iconos `public/icons/*`, SW (cache-first imágenes, network
+  para auth/rest/realtime), responsive `useWebMaxWidth`/`useCardColumns`.
+- ✅ **Botón "Instalar" PWA** (solo web): `usePwaInstall` + `InstallPwaButton`
+  (prompt nativo en Android/escritorio, instrucciones en iOS, una sola vez).
 
-1. 🔴 **Falta URL web pública de eliminación de cuenta.** El botón in-app ya está
-   implementado; Google exige también una URL accesible sin la app instalada.
-2. 🔴 **Sin Política de Privacidad publicada en una URL pública** (la tienes
-   in-app pero Play exige URL accesible desde la ficha y la app).
-3. 🟠 **PII expuesta a anónimos:** teléfono y nombre del propietario son legibles
-   sin login → cosechables por scrapers (riesgo Habeas Data, Ley 1581/2012).
+**Ficha Play Store**
+- ✅ **Data safety (§1.4)**: guía de declaración lista (correo, nombre, teléfono,
+  fotos, ubicación aproximada, contenido; cifrado en tránsito; eliminación de
+  cuenta). Es un formulario manual en Play Console — pendiente solo de pegarlo
+  cuando exista la URL de eliminación (depende del deploy §11).
+- ✅ **Target SDK (§1.5)**: Expo 54 / RN 0.81 apunta a API 35 → cumple hoy.
 
-El resto son mejoras de calidad, rendimiento y futuro. Abajo está todo detallado
-y, al final, el **roadmap priorizado** y el **§11 despliegue de la PWA** (único
-paso de la Fase 2 aún pendiente).
-
----
-
-# FASE 1 — Listos para Play Store
-
-## 1. Riesgos de rechazo en Google Play (priorizado)
-
-### 1.1 🔴 URL web pública de eliminación de cuenta — *bloqueante*
-
-**Qué exige Google:** además del mecanismo in-app (ya implementado), Play exige
-una **URL web pública** para solicitar el borrado sin tener la app instalada.
-Esa URL se pega en Play Console → *Data safety*.
-
-**Estado actual:** el botón in-app "Eliminar mi cuenta" ya está en
-`app/(tabs)/profile.tsx` con doble confirmación, y el RPC `eliminar_mi_cuenta()`
-está en `supabase/migrations/0007_cuenta_y_ugc.sql`. **Solo falta la URL web.**
-
-**Pendiente:**
-- Publicar una página simple (puede ser la misma del sitio de la PWA en
-  §11, o un Google Site / Notion público) con instrucciones y un correo de
-  contacto para solicitar borrado.
-
-### 1.3 🔴 Política de Privacidad en URL pública — *bloqueante*
-
-Tienes el documento in-app (`app/docs/politica-privacidad.tsx`) pero Play exige
-una **URL accesible públicamente** (sin login) tanto en la ficha de la tienda
-como enlazada dentro de la app. Hospédala (el despliegue de §11 la sirve
-automáticamente) y enlázala desde la ficha y el perfil.
-
-
-### 1.5 🟠 Nivel de API objetivo (target SDK)
-
-- **Hoy:** apps nuevas deben apuntar a **Android 15 (API 35)**. Expo SDK 54 /
-  RN 0.81 ya apunta a API 35 → **cumples**.
-- **Atención:** a partir del **31 de agosto de 2026** Play exigirá **API 36
-  (Android 16)** para apps y actualizaciones nuevas. Si publicas después de esa
-  fecha, planea subir a Expo SDK 55+ antes. (Hoy es junio 2026 → tienes margen,
-  pero tenlo en el radar.)
-
-### 1.9 🟡 Otros requisitos de la ficha (no son código, pero sin esto no publicas)
-
-Cuestionario de **clasificación de contenido (IARC)**, **ícono 512×512**,
-**gráfico de funciones 1024×500**, mínimo **2–8 capturas** por tipo de
-dispositivo, descripción corta y larga, y categoría. Sin estos, la ficha no se
-puede enviar.
+> **Atención migraciones:** 0001–0009 aplicadas en `mucpwtieilxgasxagujo`.
+> **0010 y 0011 creadas pero pendientes de pegar en el SQL Editor.**
 
 ---
 
-## 2. Hallazgos de seguridad (priorizado)
+# PENDIENTE
 
-### 2.1 🟠 PII pública: teléfono y nombre legibles sin autenticación
+## 1. 🔴 Bloqueantes de Play (todos dependen del deploy de la PWA, §11)
 
-La policy `*_select_aprobado_o_propio` deja leer toda fila `approved` a
-**cualquiera** (incluido anónimo con la anon key). Eso incluye
-`telefono_contacto` y `nombre_propietario`. Con la anon key (que va en el bundle)
-un scraper puede **cosechar todos los teléfonos**. En Colombia es dato personal
-(Ley 1581/2012, Habeas Data).
+### 1.1 URL pública de eliminación de cuenta
+El botón in-app ya existe (`profile.tsx` + RPC `eliminar_mi_cuenta`). Falta la
+**URL web pública** con instrucciones + correo de contacto. La sirve la PWA (§11).
 
-**Opciones (de menor a mayor esfuerzo):**
-- Exponer el teléfono **solo a usuarios autenticados** vía un RPC
-- mostrar el teléfono solo al pulsar "Contactar" (lazy + auth gate), no en el
-  payload inicial.
-- Mínimo: documentar este tratamiento en la Política de Privacidad y obtener
-  consentimiento explícito al publicar (checkbox "acepto que mi teléfono será
-  visible para contactarme").
+### 1.3 Política de Privacidad en URL pública
+Existe in-app (`app/docs/politica-privacidad.tsx`). Play exige **URL accesible
+sin login**, enlazada en la ficha y en la app. La sirve la PWA (§11).
 
-### 2.3 🟡 Policy de UPDATE del admin demasiado amplia
-
-`vehiculos_update_admin` / `propiedades_update_admin` permiten al admin modificar
-**cualquier columna** (precio, descripción, fotos), no solo `status`. El admin es
-de confianza, pero por mínimo privilegio conviene mover aprobar/rechazar a un RPC
-`SECURITY DEFINER` `moderar_publicacion(tipo, id, nuevo_status)` que **solo**
-toque `status`, y quitar las policies de UPDATE amplias. (Igual que ya hiciste
-para la gestión de usuarios.)
-
-### 2.4 🟡 Fotos de publicaciones rechazadas siguen siendo públicas
-
-El bucket `publicaciones` es público y las rutas son
-`{uid}/{tipo}/{timestamp}-{i}.jpg` (parcialmente adivinables). Las fotos de una
-publicación **rechazada** siguen accesibles por URL. Considera: borrar las fotos
-al rechazar, o usar URLs firmadas (signed URLs) para contenido no aprobado.
-
-### 2.5 🟡 Abuso/spam: sin límites ni confirmación de correo
-
-- RLS permite inserts ilimitados → un usuario puede inundar de publicaciones
-  pendientes. Considera una **cuota por usuario** (trigger que cuente pendientes)
-  o rate limiting.
-- Por el gotcha #7 del `CLAUDE.md`, la confirmación de correo está **OFF**. Para
-  producción **actívala** (evita cuentas falsas) y considera el **CAPTCHA
-  (hCaptcha) integrado de Supabase Auth**.
-- Falta flujo de **"¿Olvidaste tu contraseña?"** (`resetPasswordForEmail`).
-  Súmalo: es esperado por los usuarios y por los revisores.
-
-### 2.6 🟡 Higiene del repo
-
-- El correo del admin (`daniel200430@hotmail.com`) está hardcodeado en
-  `admins.ts` y en `0003_admin_policies.sql`. No es un secreto crítico (el gate
-  real es server-side) pero a futuro conviene una **tabla `roles`** o un *custom
-  claim* en el JWT en vez de listas en dos sitios que hay que mantener
-  sincronizadas.
-
-> **Nota positiva:** la anon key es del tipo `sb_publishable_` (diseñada para ir
-> en el cliente), no hay `service_role` en el bundle, la autoridad real vive en
-> RLS + RPCs `SECURITY DEFINER`, y la sesión ya está cifrada con SecureStore
-> (nativo, chunking ~1.8KB) / AsyncStorage (web). 👍
+### 1.9 Assets de ficha (manual, sin código)
+Clasificación IARC, ícono 512×512, gráfico de funciones 1024×500, 2–8 capturas
+por dispositivo, descripción corta y larga, categoría.
 
 ---
 
-## 3. Rendimiento y calidad de código
+## 2. 🟠 Seguridad / robustez (antes o justo después de lanzar)
 
-- 🟡 **Dependencias muertas:** `react-hook-form`, `expo-notifications` y
-  `expo-file-system` no se importan en `app/`/`src/` (verificado por grep).
-  Pesan en el bundle y confunden. Decide: **úsalas o quítalas**.
-  (`expo-notifications` consérvala solo si vas a implementar push pronto.
-  `expo-secure-store` **ya se usa** — cierra el hallazgo 2.2.)
-- 🟡 **Sin Error Boundary global:** un error de render tumba toda la app. Añade un
-  `ErrorBoundary` en `app/_layout.tsx` con UI de fallback amable.
-- 🟡 **Sin reporte de crashes:** integra **Sentry** (`@sentry/react-native`,
-  plugin de Expo) para ver errores en producción. Imprescindible post-lanzamiento.
-- 🟡 **Miniaturas del feed:** el grid carga las `publicUrl` completas (1280px).
-  Usa la **transformación de imágenes de Supabase** (`?width=400`) o genera
-  thumbnails para el grid; `expo-image` ya cachea, pero bajarás datos y memoria.
-- 🟡 **Sin tests:** no hay ninguna prueba. Mínimo: smoke tests de los servicios
-  (`feed`, `publicaciones`, `validation`) con Jest + `@testing-library/react-native`,
-  y validar los esquemas Zod.
-- 🟢 **Bien hecho:** TSC limpio, imágenes comprimidas en subida (resize 1280 +
-  `compress 0.7`), React Query con prefetch en splash, RLS por índice, constraints
-  de integridad en DB (años, precios, teléfono regex).
+### 2.5 Confirmación de correo + CAPTCHA *(manual del usuario en el deploy)*
+Activar confirmación de correo en Supabase Auth (hoy OFF, gotcha #7) y considerar
+hCaptcha. **El usuario lo hará manualmente al desplegar.** Cuando se active la
+confirmación, configurar también en Supabase **Auth → URL Configuration →
+Redirect URLs**: `https://<dominio>/auth/reset-password`,
+`milink://auth/reset-password` (sin esto, el enlace de recuperación no funciona).
 
----
+### 2.6 Admin hardcodeado en dos sitios
+`daniel200430@hotmail.com` en `src/lib/admins.ts` **y** en
+`0003_admin_policies.sql`. A futuro: tabla `roles` o custom claim en el JWT en
+vez de mantener dos listas sincronizadas. (No es secreto; el gate real es RLS.)
 
-## 4. Cómo compilar y publicar en Google Play — paso a paso
+### 2.x Error Boundary global *(nuevo — alta relación valor/esfuerzo)*
+Un error de render tumba toda la app. Añadir un `ErrorBoundary` en
+`app/_layout.tsx` con UI de fallback amable. Es lo más barato y de mayor impacto.
 
-> Asume que nunca lo has hecho. Usa **EAS Build** (la nube de Expo); no necesitas
-> Android Studio ni configurar el SDK localmente.
-
-### Paso 0 — Requisitos de una sola vez
-1. **Cuenta de Google Play Console**: pago único de **USD 25**.
-   Desde 2023 las cuentas **personales nuevas** pueden requerir **verificación de
-   identidad** y, según el caso, un **periodo de pruebas cerradas con ~12–20
-   testers durante 14 días** antes de poder publicar en producción. Créala cuanto
-   antes para no bloquear el lanzamiento.
-2. **Cuenta Expo** (gratis) y la CLI:
-   ```bash
-   npm install -g eas-cli
-   eas login
-   ```
-
-### Paso 1 — Identidad (ya lista)
-`app.json` tiene `android.package: "com.danielkmm.milink"` y `name: "Milink"`.
-Están correctos — no cambiar.
-
-### Paso 2 — Versionado
-Ya tienes `eas.json` con `production.autoIncrement: true` y
-`appVersionSource: "remote"` → EAS maneja el `versionCode` por ti. Solo sube
-`version` (ej. `1.0.0`) en `app.json` cuando cambie la versión visible.
-
-### Paso 3 — Variables de entorno en EAS
-Tu `.env` está gitignored (✅). Para que el build en la nube tenga las claves,
-súbelas como variables de EAS:
-```bash
-eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://mucpwtieilxgasxagujo.supabase.co" --environment production
-eas env:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "sb_publishable_..." --environment production
-```
-(Son `EXPO_PUBLIC_*`, o sea públicas por diseño; la seguridad está en RLS.)
-
-### Paso 4 — Build de producción (genera el .aab)
-```bash
-eas build --profile production --platform android
-```
-EAS crea y **gestiona tu keystore** (firma de la app) automáticamente — guárdalo
-bien, es lo que te permite actualizar la app en el futuro. Al terminar te da un
-**`.aab`** (Android App Bundle, el formato que pide Play).
-
-### Paso 5 — Probarla antes de publicar
-- Build de prueba instalable: `eas build --profile preview --platform android`
-  (genera un APK que puedes instalar en tu teléfono).
-- O sube el `.aab` al canal de **pruebas internas** en Play Console.
-
-### Paso 6 — Crear la app en Play Console y completar fichas
-En Play Console → "Crear app". Luego completa (sin esto no se envía):
-- **Política de Privacidad** (URL del paso 1.3 — servida por la PWA de §11).
-- **Data safety** (sección 1.4).
-- **Clasificación de contenido** (IARC).
-- **Público objetivo y contenido** (mayores de edad).
-- **Ficha principal**: ícono 512×512, gráfico de funciones 1024×500, capturas,
-  descripción corta y larga.
-- **URL de eliminación de cuenta** (paso 1.1 — servida por la PWA de §11).
-
-### Paso 7 — Subir el binario
-- Manual: arrastra el `.aab` en Producción (o Prueba cerrada primero).
-- Automático: `eas submit --profile production --platform android` (configura una
-  *service account* de Google una vez; EAS lo documenta en el primer intento).
-
-### Paso 8 — Pruebas cerradas → Producción
-Haz el ciclo de **prueba cerrada** (invita testers por correo/grupo), corrige lo
-que salga, y luego promueve a **Producción**. La primera revisión suele tardar
-**de unas horas a varios días**.
-
-### Paso 9 — Post-lanzamiento
-Vigila *Android vitals* (ANRs, crashes), responde reseñas, y planifica el salto a
-**API 36** antes del 31-ago-2026 si publicas cerca de esa fecha.
+### 2.x Reporte de crashes (Sentry)
+Integrar `@sentry/react-native` (plugin Expo). Imprescindible post-lanzamiento
+para ver errores reales en producción.
 
 ---
 
-## 5. Mejoras, futuras funciones e integraciones
+## 3. 🟡 Calidad / mantenimiento
 
-**Producto / engagement**
-- **Notificaciones push** (ya tienes `expo-notifications`): avisar al dueño cuando
-  su publicación se aprueba/rechaza, y al interesado de novedades. Requiere
-  configurar el plugin en `app.json` + permisos + tabla de push tokens.
-- **Chat in-app** en lugar de saltar a WhatsApp: mantiene al usuario dentro,
-  es más seguro y moderable (y reduce la exposición de teléfonos, ver 2.1).
+- **Higiene del repo `.claude/`** *(nuevo)*: hay **~53 MB / 3591 archivos** de
+  skills de Claude trackeados en git. Ya se añadió `.claude/` a `.gitignore`;
+  falta sacarlos del índice una vez: `git rm -r --cached .claude` y commit.
+- **Dependencias muertas** *(confirmado por grep en `app/` y `src/`)*:
+  `react-hook-form`, `expo-notifications`, `expo-file-system` no se importan en
+  ningún lado. Quitarlas (conservar `expo-notifications` solo si se hará push
+  pronto). Reduce bundle y confusión.
+- **Miniaturas del feed**: el grid baja las `publicUrl` completas (~1280px). Usar
+  la transformación de Supabase (`?width=400`) para el grid. `expo-image` ya
+  cachea; esto baja datos y memoria.
+- **Sin tests**: mínimo smoke tests de `feed`, `publicaciones`, `validation` con
+  Jest + `@testing-library/react-native` y validación de los esquemas Zod.
 
-
----
-
-# FASE 2 — PWA instalable
-
-> ✅ **§6–§10 y §12 completados** (junio 2026). La PWA comparte el mismo código
-> que la app móvil: mismas fuentes Quicksand, misma paleta esmeralda `#10B981`,
-> mismas rutas y funciones. En dispositivos móviles (iPhone ~390px) se ve
-> idéntica a la app nativa. En escritorio (≥768px) aplica ancho máximo adaptativo
-> por pantalla via `useWebMaxWidth()` / `useCardColumns()` en `src/lib/responsive.ts`.
-> El único paso pendiente es el despliegue (§11).
-
-## 11. Despliegue de la PWA
-
-El `dist/` y `public/` ya están listos para servir desde un CDN estático.
-
-- Hospeda `/dist` en **Vercel, Netlify o Cloudflare Pages** (todos sirven
-  estáticos con HTTPS y CDN gratis). Cloudflare Pages o Vercel son ideales.
-- Con `web.output: "static"` (ya configurado en `app.json`) Expo genera rutas
-  reales — no hace falta configurar redirects SPA.
-- Esta misma web sirve gratis: la **URL de Política de Privacidad** y la
-  **URL de eliminación de cuenta** que Play exige en los ítems 1.1 y 1.3. 🎯
-- CI opcional: una GitHub Action que en cada push a `main` corra
-  `npx expo export -p web` y despliegue a Vercel/Cloudflare.
+### PWA — afinaciones del Service Worker *(nuevo)*
+- **Fallback offline impreciso**: en `public/sw.js` toda navegación se cachea bajo
+  la clave `OFFLINE_URL` (`/`), así que el fallback offline puede mostrar la
+  última ruta visitada en vez de la home. Cachear bajo `request.url` o solo
+  cuando la navegación sea realmente a `/`.
+- **Versionado manual del SW**: `VERSION = "milink-v1"` no se autobumpea. Al
+  desplegar conviene subir la versión (o automatizarlo) para invalidar el shell
+  precacheado; los bundles con hash ya se renuevan por SWR.
 
 ---
 
-## 13. Roadmap priorizado (qué hacer primero)
+## 4. Cómo compilar y publicar en Google Play — paso a paso (referencia)
 
-**🔴 Antes de enviar a Play (bloqueante):**
-1. Desplegar la PWA (§11) → da las URLs públicas para 1.1 y 1.3.
-2. Completar Data safety + clasificación IARC + assets de ficha (1.4, 1.9).
+> Usa **EAS Build** (nube de Expo); no necesitas Android Studio. `app.json` ya
+> tiene `android.package: "com.danielkmm.milink"`. `eas.json` ya maneja
+> `versionCode` (`autoIncrement` + `appVersionSource: "remote"`).
 
-**🟠 Muy recomendable antes o justo después de lanzar:**
-3. Proteger PII de teléfono/nombre (2.1).
-4. Activar confirmación de correo + recuperar contraseña + CAPTCHA (2.5).
-5. Error Boundary + Sentry (3).
-
-**🟡 Mejora continua:**
-6. Limpiar dependencias muertas (react-hook-form, expo-file-system, expo-notifications si no se usan), thumbnails, tests, `.gitignore` de `.claude/`.
-7. RPC `moderar_publicacion` para restringir UPDATE del admin (2.3).
-8. Limpiar fotos al rechazar publicación (2.4).
-9. Reseñas (UI), push, chat in-app (§5).
+0. **Una sola vez:** cuenta Play Console (USD 25, posible verificación de
+   identidad + pruebas cerradas ~12–20 testers/14 días para cuentas personales
+   nuevas). Cuenta Expo + `npm i -g eas-cli && eas login`.
+1. **Variables en EAS** (las del `.env`, son `EXPO_PUBLIC_*`):
+   `eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "..." --environment production`
+   (y la anon key). EAS gestiona el keystore — guárdalo bien.
+2. **Build:** `eas build --profile production --platform android` → genera `.aab`.
+3. **Probar:** `eas build --profile preview --platform android` (APK) o canal de
+   pruebas internas en Play Console.
+4. **Crear app en Play Console** y completar fichas: Política de Privacidad
+   (§1.3), Data safety (§0/§1.4), IARC, público objetivo (mayores de edad),
+   ícono/gráfico/capturas (§1.9), URL eliminación de cuenta (§1.1).
+5. **Subir binario:** manual (arrastra `.aab`) o `eas submit`.
+6. **Pruebas cerradas → Producción.** Primera revisión: horas a varios días.
+7. **Post-lanzamiento:** vigila Android vitals; planifica **API 36 (Android 16)**
+   antes del **31-ago-2026** (subir a Expo SDK 55+) si publicas cerca de esa fecha.
 
 ---
 
-*Documento actualizado tras revisar el código real del repositorio. Las afirmaciones
-sobre políticas de Google Play y niveles de API se verificaron con la documentación
-oficial vigente a junio de 2026.*
+## 5. Futuro (post-lanzamiento)
+
+- **Notificaciones push**: avisar al dueño cuando se aprueba/rechaza su
+  publicación (requiere `expo-notifications` + plugin en `app.json` + tabla de
+  tokens). Si no se hace pronto, quitar la dep (ver §3).
+- **Chat in-app** en vez de saltar a WhatsApp: más seguro, moderable y reduce la
+  exposición de teléfonos.
+- **Reseñas (UI)**: la tabla `resenas` ya existe en el esquema.
+
+---
+
+## 11. 🔴 Despliegue de la PWA (desbloquea 1.1 y 1.3)
+
+`dist/` y `public/` listos para CDN estático.
+- Hospedar en **Vercel / Cloudflare Pages / Netlify** (HTTPS + CDN gratis).
+- Con `web.output: "static"` Expo genera rutas reales — sin redirects SPA.
+- Esta misma web sirve **gratis** la URL de Política de Privacidad (1.3) y la de
+  eliminación de cuenta (1.1). 🎯
+- Tras desplegar: registrar las Redirect URLs de recuperación de contraseña en
+  Supabase (ver §2.5).
+- CI opcional: GitHub Action que en cada push a `main` corra
+  `npx expo export -p web` y despliegue.
+
+---
+
+## Orden sugerido
+
+1. **Desplegar PWA (§11)** → da las URLs y desbloquea 1.1 y 1.3.
+2. **Pegar migraciones 0010 y 0011** en el SQL Editor.
+3. Completar ficha de Play: Data safety + IARC + assets (1.9).
+4. Activar confirmación de correo + Redirect URLs + (CAPTCHA) (2.5).
+5. Error Boundary + Sentry (2.x).
+6. Higiene: `git rm -r --cached .claude`, quitar deps muertas, thumbnails, tests.
+
+---
+
+*Las afirmaciones sobre políticas de Google Play y niveles de API se verificaron
+con la documentación oficial vigente a junio de 2026.*

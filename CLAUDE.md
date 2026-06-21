@@ -64,7 +64,7 @@ admin** antes de aparecer en el feed público.
 
 ### Iconos
 - Todos centralizados en **`src/components/icons.tsx`** con dos patrones:
-  - **Stroke** (`Stroke` wrapper): lineales, color via prop. Ej: `Mail`, `Lock`, `Heart`, `ChevronLeft`, `Star`, `Camera`, `Menu`, `InfoCircle`, `HelpCircle`, `FileText`, `LogOut`, `ClipboardList`, `MessageCircle`.
+  - **Stroke** (`Stroke` wrapper): lineales, color via prop. Ej: `Mail`, `Lock`, `Heart`, `ChevronLeft`, `Star`, `Camera`, `Menu`, `InfoCircle`, `HelpCircle`, `FileText`, `LogOut`, `ClipboardList`, `MessageCircle`, `Download`, `IosShare`.
   - **Filled** (`Filled` wrapper): rellenos. Ej: `Truck`, `Car`, `Bike`, `Building2`, `Home`, `Trees`, `WhatsApp`, `HeartFilled`, `BadgeDolar`, `ShieldCheck`, `Sparkles`, `Smartphone`.
   - Marca multicolor: `GoogleIcon`, `FacebookIcon`, `AppleIcon` (Svg directo sin wrapper).
 - `CATEGORY_ICONS` mapea categorías → componente (legacy). **`CategoryPill` ahora usa imágenes WebP** (`CATEGORY_IMAGES` con `require()`).
@@ -84,8 +84,10 @@ app/                            # Expo Router (rutas)
 │   ├── publish.tsx             # Paso 1: términos legales + checkboxes
 │   └── profile.tsx             # Perfil (logueado o anónimo) + link a /admin si es admin
 ├── auth/
-│   ├── login.tsx               # signInWithPassword (sociales son stub)
-│   └── register.tsx            # signUp con user_metadata.nombre
+│   ├── login.tsx               # signInWithPassword (sociales son stub) + link "¿olvidaste contraseña?"
+│   ├── register.tsx            # signUp con user_metadata.nombre
+│   ├── forgot-password.tsx     # resetPasswordForEmail (redirectTo via expo-linking)
+│   └── reset-password.tsx      # updateUser({password}) tras llegar del enlace/deep link
 ├── publish/
 │   └── form.tsx                # Paso 2: form completo + Zod + 3 fotos + modal de éxito
 ├── vehicle/
@@ -112,7 +114,8 @@ app/                            # Expo Router (rutas)
 
 src/
 ├── components/
-│   ├── icons.tsx               # TODOS los iconos del proyecto (~30 iconos)
+│   ├── icons.tsx               # TODOS los iconos del proyecto (~32 iconos)
+│   ├── InstallPwaButton.tsx    # Botón "Instalar" PWA (solo web) + hoja iOS; null en nativo
 │   ├── CustomTabBar.tsx        # Tab bar con BlurView y FAB "Publicar"
 │   ├── tabBarMetrics.ts        # useTabBarHeight() + TAB_BAR_BASE_HEIGHT=64
 │   ├── Avatar.tsx              # Avatar vectorial (no foto humana)
@@ -145,17 +148,23 @@ src/
 │   ├── mock.ts                 # NUEVAS, DISPONIBLES, CATEGORIAS (fallback de UI)
 │   └── detail.ts               # getDetalleById (mock) + fetchDetalleById (async)
 ├── lib/
-│   ├── supabase.ts             # createClient<Database>() con AsyncStorage
-│   ├── auth.tsx                # SessionProvider + useSession()
+│   ├── supabase.ts             # createClient<Database>() con sessionStorage por plataforma
+│   ├── auth.tsx                # SessionProvider + useSession() (maneja refresh token inválido)
 │   ├── favoritos.tsx           # FavoritosProvider + useFavoritos() (AsyncStorage)
+│   ├── pwaInstall.ts           # usePwaInstall() — beforeinstallprompt / iOS / una sola vez (solo web)
+│   ├── responsive.ts           # useWebMaxWidth(n) + useCardColumns() (breakpoint 768px)
+│   ├── sessionStorage.ts       # SecureStore chunked (nativo) | AsyncStorage (web) | no-op SSR
 │   ├── admins.ts               # ADMIN_EMAILS + esAdmin(user)
 │   └── validation/
 │       └── publicacion.ts      # Zod: vehiculoSchema, propiedadSchema
 ├── services/
 │   ├── storage.ts              # subirImagenes() — base64 → Storage 'publicaciones'
 │   ├── publicaciones.ts        # crearVehiculo, crearPropiedad, getUsuarioActual()
-│   ├── feed.ts                 # listar*Aprobados, listarMixtoAprobado, listarNuevasEntradas, listar*PorIds
-│   ├── moderacion.ts           # listarPendientes, aprobar, rechazar
+│   ├── feed.ts                 # listar*Aprobados, listarMixtoAprobado, listarNuevasEntradas, buscarMixto (saneado), listar*PorIds
+│   ├── moderacion.ts           # listarPendientes, aprobar, rechazar (borra fotos de storage)
+│   ├── reportes.ts             # reportar() — UGC
+│   ├── bloqueos.ts             # bloquearUsuario/listarBloqueados — UGC
+│   ├── cuenta.ts               # eliminarMiCuenta() (RPC)
 │   └── misPublicaciones.ts     # getMisPublicaciones, get/actualizarVehiculo|Propiedad (edición)
 ├── theme/
 │   └── colors.ts               # COLORS y FONTS tokens
@@ -163,7 +172,7 @@ src/
     └── database.ts             # Tipos del esquema (alineados con migraciones)
 
 supabase/
-└── migrations/                 # 0001 → 0005 (el usuario los corre en SQL Editor)
+└── migrations/                 # 0001 → 0011 (el usuario los corre en SQL Editor)
 
 assets/
 ├── icon1.png                   # Icono único de la app (~330 KB, 1024×1024, usado en app.json, login, registro, header Explorar y drawer)
@@ -193,6 +202,8 @@ metro.config.js                 # Extiende Expo default + NativeWind CSS + .md e
 | `/(tabs)/profile` | Perfil (logueado o invitación a login) | Tab "Perfil" |
 | `/auth/login` | Login email/password (+ stubs sociales) | Botón del perfil / auth gate |
 | `/auth/register` | signUp | Link "Regístrate" del login |
+| `/auth/forgot-password` | Solicitar enlace de recuperación | Link "¿Olvidaste tu contraseña?" del login |
+| `/auth/reset-password` | Definir nueva contraseña (llega del enlace/deep link) | Email de recuperación → web URL o `milink://` |
 | `/publish/form` | Formulario completo | Paso legal → requiere sesión |
 | `/vehicle/[id]` | Detalle (veh **o** propiedad) | Tarjetas feed, carrusel, panel admin |
 | `/categoria/[key]` | Listado por categoría | Píldoras de "Categorías" en Explorar |
@@ -207,7 +218,10 @@ metro.config.js                 # Extiende Expo default + NativeWind CSS + .md e
 ## Decisiones de arquitectura
 
 - **Auth no bloqueante**: la app abre en Explorar sin login. Solo se pide al **Reservar**, **Publicar** o **marcar favorito** (anon → Alert con opción de ir a login).
-- **`SessionProvider`** (en `src/lib/auth.tsx`) escucha `onAuthStateChange` y expone `useSession()` con `{ session, user, loading, signOut }`.
+- **`SessionProvider`** (en `src/lib/auth.tsx`) escucha `onAuthStateChange` y expone `useSession()` con `{ session, user, loading, signOut }`. El `getSession()` inicial maneja el error de **refresh token inválido** (`AuthApiError` tras pausar/reanudar el proyecto): llama `signOut()` para limpiar SecureStore y deja `session = null`, evitando el loop de error en cada apertura.
+- **Recuperar contraseña**: `auth/forgot-password` (`resetPasswordForEmail` con `redirectTo = ExpoLinking.createURL("/auth/reset-password")` → web URL absoluta / nativo `milink://`) y `auth/reset-password` (la sesión temporal la crea Supabase desde el enlace; `updateUser({ password })`; si llega sin sesión redirige a forgot-password). Requiere `scheme: "milink"` en `app.json` y registrar las Redirect URLs en Supabase al desplegar.
+- **Botón "Instalar" PWA** (`src/components/InstallPwaButton.tsx` + `src/lib/pwaInstall.ts`): SOLO web (null en nativo). Captura `beforeinstallprompt` (Android/escritorio Chrome/Edge) para lanzar el instalador; en iOS Safari abre una hoja de instrucciones (no hay instalador programático). Se oculta si ya está en standalone o si existe el flag `milink:pwa-install-dismissed` en localStorage (se persiste tras cualquier interacción → "una sola vez"). SSR-safe: todo lo que toca `window` vive en `useEffect`, estado inicial `visible=false`. Va en el header de Explorar entre "Milink" y el corazón.
+- **Cuota anti-spam** (migración 0011): trigger `BEFORE INSERT` en `vehiculos`/`propiedades` (`verificar_cuota_publicaciones`, SECURITY DEFINER) que bloquea > 5 publicaciones en `pending_approval` por usuario (suma ambas tablas).
 - **`FavoritosProvider`** (en `src/lib/favoritos.tsx`) persiste en AsyncStorage (`@milink:favoritos`). Expone `useFavoritos()` con `{ favoritos, esFavorito(id), toggleFavorito(id, tipo), loading }`. Revierte estado si el write a AsyncStorage falla.
 - **Tabs con `BlurView` absoluto** (no ocupan layout). Pantallas con footer fijo o listas largas deben reservar espacio con **`useTabBarHeight()`** (de `src/components/tabBarMetrics.ts`). NO hardcodear paddings.
 - **Splash animado overlay**: logo SVG redibujado a mano (5 paths limpios en viewBox `0 0 100 100`: techo sup, techo inf, chimenea, eslabón izq/der). Fondo `#0F1115` con grid estático + sparkles pulsantes. Animación de 6 fases (~3.5s): stroke-draw con `strokeDashoffset`, glow neon (3 capas), hold, círculo verde `withSpring`, sólido, fade-out con `runOnJS(onFinish)`. Se renderiza como overlay absoluto (`zIndex 999`); el `<Stack>` monta detrás desde t=0 y las queries disparan durante la animación.
@@ -229,6 +243,9 @@ metro.config.js                 # Extiende Expo default + NativeWind CSS + .md e
 - **Detalle moderación admin**: el listado `/admin` ya no tiene botones inline — cada card navega a `/admin/moderar/[tipo]/[id]`. La pantalla de detalle muestra carrusel paginado de todas las fotos, todos los campos con componente `Campo({ label, value })`, bloque destacado de teléfono con botón **WhatsApp** (`Linking.openURL(\`https://wa.me/${tel}\`)`), y botones aprobar/rechazar. "Rechazar" abre un modal con textarea para `motivo_rechazo` (opcional). Ambas mutations llaman RPC `moderar_publicacion` e invalidan `["pendientes"]` **y** `["mis-publicaciones"]`.
 - **PII protegida (contacto propietario)**: `telefono_contacto` y `nombre_propietario` **no son legibles por `anon`** (column-level REVOKE, migración 0008). En `app/vehicle/[id].tsx` el contacto se carga lazy (`queryKey: ["contacto", tipo, id]`, `enabled: !!user`) via RPC `obtener_contacto_publicacion`. Usuarios anónimos ven "Propietario verificado". Forms de publicar (`app/(tabs)/publish.tsx`) y editar (`app/mis-publicaciones/editar/[tipo]/[id].tsx`) incluyen checkbox de consentimiento (`consientoContacto`) requerido para guardar.
 - **Términos de publicación inline**: `app/(tabs)/publish.tsx` renderiza `TERMINOS_TEXTO` de `src/content/terminosPublicacion.ts` (string literal completo). Elimina dependencia de `expo-asset + fetch` que falla intermitentemente en hosts web estáticos.
+- **Fotos eliminadas al rechazar** (migración 0010): el RPC `moderar_publicacion` limpia `imagenes = '{}'` en rechazos; `rechazar()` en `moderacion.ts` recibe las URLs y borra los archivos del bucket (best-effort) tras el RPC. Policy `publicaciones_delete_admin` permite al admin borrar archivos de cualquier usuario.
+- **Búsqueda saneada**: `buscarMixto` (`feed.ts`) hace `query.trim().replace(/[,()%]/g, "")` antes de construir el filtro `.or()` de PostgREST → evita inyección de filtros. Los `.ilike(col, valor)` con valor parametrizado ya son seguros.
+- **UGC moderable** (migración 0007): `reportar()` y `bloquearUsuario()` cableados en `app/vehicle/[id].tsx` (detalle). `eliminar_mi_cuenta()` RPC desde el perfil. Requisito de Play para apps con contenido de usuarios.
 
 ---
 
@@ -269,8 +286,10 @@ Polimórfica con XOR check: solo uno de `vehiculo_id`/`propiedad_id` non-null. `
 | 0007 | `0007_cuenta_y_ugc.sql` | RPC `eliminar_mi_cuenta()` + tablas `reportes`/`bloqueos` + `admin_listar_reportes()` |
 | 0008 | `0008_pii_contacto_protegida.sql` | REVOKE/GRANT column-level en `vehiculos`/`propiedades` para `anon` (excluye `telefono_contacto` y `nombre_propietario`); RPC `obtener_contacto_publicacion(p_tipo, p_id)` SECURITY DEFINER, solo `authenticated` |
 | 0009 | `0009_moderacion_rpc.sql` | Columna `motivo_rechazo` en ambas tablas; RPC `moderar_publicacion(p_tipo, p_id, p_nuevo_status, p_motivo)` SECURITY DEFINER; elimina policies `*_update_admin` directas |
+| 0010 | `0010_limpiar_fotos_al_rechazar.sql` | Policy `publicaciones_delete_admin` en storage + RPC `moderar_publicacion` ahora limpia `imagenes` al rechazar |
+| 0011 | `0011_cuota_publicaciones.sql` | Trigger `verificar_cuota_publicaciones` (BEFORE INSERT) — máx. 5 publicaciones `pending_approval` por usuario |
 
-**Status:** 0001–0009 aplicadas en el proyecto `mucpwtieilxgasxagujo`.
+**Status:** 0001–0009 aplicadas en el proyecto `mucpwtieilxgasxagujo`. **0010 y 0011 creadas, pendientes de pegar en el SQL Editor.**
 
 > **Nota:** MCP de Supabase NO conectado a la cuenta del usuario. Migraciones nuevas van a `supabase/migrations/` y el usuario las pega en SQL Editor.
 
@@ -279,6 +298,8 @@ Polimórfica con XOR check: solo uno de `vehiculo_id`/`propiedad_id` non-null. `
 ## Configuración de entorno
 
 `.env` (gitignored): `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY`. `.env.example` commiteado como plantilla.
+
+`app.json`: `scheme: "milink"` (deep link para el enlace de recuperación de contraseña en nativo). `android.adaptiveIcon.foregroundImage` apunta a `assets/icon1.png` (icono del home). `web` con `output: "static"`, `themeColor: "#10B981"`. `.claude/` está en `.gitignore` (skills locales, ~53MB — no van al repo).
 
 Sesión: adaptador por plataforma en `src/lib/sessionStorage.ts` — **SecureStore con chunking ~1.8KB en nativo** (cifrado en Keychain/Keystore), **AsyncStorage en web** (con fallback no-op en SSR). Cableado en `supabase.ts` como `auth.storage` + `detectSessionInUrl: Platform.OS === "web" && typeof window !== "undefined"`. Polyfill URL via `react-native-url-polyfill/auto`.
 
@@ -304,7 +325,7 @@ eas build --profile development --platform android  # Build de desarrollo
 4. **`auth.users` bloqueado en cliente** por RLS. `nombre_propietario` denormalizado en publicaciones.
 5. **`scrollToOffset` y `pagingEnabled`**: carrusel detalle usa `pagingEnabled` (ancho pantalla); Nuevas entradas usa `snapToInterval`.
 6. **`expo install` vs `npm install`**: siempre `expo install` para deps de Expo SDK 54.
-7. **Email confirmation** en Supabase Auth → para pruebas conviene OFF.
+7. **Email confirmation** en Supabase Auth → para pruebas conviene OFF. **Para producción se activa manualmente al desplegar** (junto con las Redirect URLs de recuperación de contraseña: `https://<dominio>/auth/reset-password` y `milink://auth/reset-password`).
 8. **Reanimated 4 en web**: funciona, pero `transform` durante animación puede dejar residuos. Si se ve raro en web, no es necesariamente bug en nativo.
 9. **MCP Supabase** conectado a otra cuenta — migraciones se dan al usuario para SQL Editor.
 10. **Nested `<button>` en web**: Pressable corazón dentro de Pressable card → `<button>` anidados (HTML inválido). Solución: heart como **sibling** absoluto, no hijo.
@@ -316,6 +337,8 @@ eas build --profile development --platform android  # Build de desarrollo
 16. **Ancho máximo en PWA sin romper móvil**: usar **siempre** `useWebMaxWidth(n)` de `src/lib/responsive.ts` (devuelve `null` si `Platform.OS !== "web"` o si `width < 768`). Mezclarlo en el `contentContainerStyle` del scroll y en las barras header/footer fijas. **No** introducir colores ni layouts solo-web — un iPhone (~390px) debe ver lo mismo que la app nativa.
 17. **`Alert.alert` no funciona con botones en web**: `Alert.alert` con buttons en React Native Web solo renderiza `window.alert` (sin botones propios). Para confirmaciones que requieran acción (ej. "¿Iniciar sesión?"), usar `Platform.OS === "web"` + `window.confirm`. Patrón implementado en `app/vehicle/[id].tsx` (`exigirSesion`).
 18. **`expo-asset + fetch` puede fallar en hosts web estáticos**: la URI bundleada de archivos `.md` no siempre se resuelve en exports estáticos. Alternativa 100% confiable: inlinear el texto como constante TypeScript (ver `src/content/terminosPublicacion.ts` + `TERMINOS_TEXTO`). Los docs institucionales (`/docs/*`) siguen con `MarkdownDoc` + `expo-asset` porque son menos críticos; si empiezan a fallar, migrar al mismo patrón inline.
+19. **Iconos solo-web (`beforeinstallprompt`, `localStorage`, `matchMedia`) revientan en SSR**: el patrón seguro es el de `pwaInstall.ts` — `Platform.OS !== "web"` corta temprano, todo acceso a `window`/`navigator` vive en `useEffect`, y el estado inicial deja el componente en `null` para que el render del servidor y la primera hidratación coincidan. Verificar la píldora en preview: el evento `beforeinstallprompt` no dispara en Chrome headless, hay que despacharlo sintéticamente o forzar el branch temporalmente.
+20. **El icono del home de Android es el `adaptiveIcon`, no `icon`**: si el icono del cel se ve mal (placeholder), cambiar `android.adaptiveIcon.foregroundImage` (no solo `expo.icon`). Solo se actualiza con un nuevo build nativo (`eas build`), no con `--clear`. El `foregroundImage` se recorta en círculo/squircle según el launcher — el logo debería tener ~20% de margen.
 
 ---
 
@@ -350,7 +373,12 @@ Editar `src/components/icons.tsx`: Stroke (`Stroke` wrapper) para lineales, Fill
 **Flujo completo funcional**: registro → login → publicar (T&C + form + 3 fotos + modal) → admin aprueba/rechaza (con motivo opcional) desde detalle de moderación → aparece en Explorar (mixto veh+prop) y en su categoría → detalle con propietario real, teléfono y WhatsApp link (solo para autenticados). El dueño ve sus publicaciones en "Mis publicaciones" con badge de estado y motivo de rechazo si aplica, y puede editarlas (vuelven a `pending_approval`). Auth real con Supabase Auth, sesión persistida en AsyncStorage. Storage real: fotos suben a bucket `publicaciones`.
 
 **Funcionalidades recientes**:
-- **Fase 2 PWA (en curso, §6–§10 del plan)**: el mismo código exporta a `dist/` como PWA estática (`web.output: "static"` en `app.json`). Stack web:
+- **Botón "Instalar" PWA** (solo web): píldora esmeralda en el header de Explorar entre "Milink" y el corazón. Prompt nativo en Android/escritorio, hoja de instrucciones en iOS, se muestra una sola vez. `usePwaInstall` + `InstallPwaButton`.
+- **Recuperar contraseña**: `auth/forgot-password` + `auth/reset-password` con deep link `milink://`. Link "¿Olvidaste tu contraseña?" en login.
+- **Anti-spam**: cuota de máx. 5 publicaciones pending por usuario (trigger, migración 0011).
+- **Fotos de rechazadas eliminadas** (migración 0010): RPC limpia `imagenes` + borrado en storage.
+- **Refresh token inválido manejado** en `auth.tsx` (evita loop de `AuthApiError`).
+- **Fase 2 PWA (§6–§10 del plan)**: el mismo código exporta a `dist/` como PWA estática (`web.output: "static"` en `app.json`). Stack web:
   - `app/+html.tsx` = HTML root con `<head>` PWA (manifest, theme-color esmeralda, apple-touch-icon) + registro del SW.
   - `public/manifest.json` (Milink, `#10B981`/`#0F1115`) + `public/sw.js` (cache-first app shell + SWR imágenes Supabase; **NO** cachea `/auth/`,`/rest/`,`/realtime/`) + `public/icons/{192,512,maskable-512}.png` generados desde `assets/icon1.png` con `@expo/image-utils`.
   - `src/lib/sessionStorage.ts` = SecureStore nativo (chunked) | AsyncStorage web | no-op SSR.
@@ -372,6 +400,13 @@ Editar `src/components/icons.tsx`: Stroke (`Stroke` wrapper) para lineales, Fill
 - **Moderación admin vía RPC + motivo de rechazo** (migración 0009): policies UPDATE directas del admin eliminadas; admin llama RPC `moderar_publicacion` (SECURITY DEFINER). Modal de rechazo con textarea para motivo opcional. El motivo aparece en "Mis publicaciones" bajo la card rechazada (bloque rojo). Mutations invalidan `["pendientes"]` y `["mis-publicaciones"]`.
 - **Términos de publicación inline**: `TERMINOS_TEXTO` como constante en `src/content/terminosPublicacion.ts`; elimina fallo de `expo-asset + fetch` en web estático.
 
-**Pendientes conocidos**: comprimir logo (~5 MB), conectar OAuth Google/Facebook/Apple (hoy son stubs), modo oscuro (no tocar aún), despliegue PWA en Vercel/Cloudflare (§11 del plan).
+**Pendientes conocidos** (ver `PLAN_PUBLICACION_Y_PWA.md` para detalle/prioridad):
+- 🔴 Desplegar PWA (§11) → da las URLs públicas de Política de Privacidad y eliminación de cuenta que Play exige.
+- 🔴 Pegar migraciones **0010 y 0011** en el SQL Editor.
+- 🟠 Activar confirmación de correo + Redirect URLs de recuperación (manual al desplegar) + CAPTCHA.
+- 🟠 Error Boundary global + Sentry (no hay manejo de crashes).
+- 🟡 Higiene: `git rm -r --cached .claude` (ya en `.gitignore`); quitar deps muertas (`react-hook-form`, `expo-notifications`, `expo-file-system` — confirmado sin imports); thumbnails del feed (`?width=`); tests; admin email en tabla `roles`.
+- 🟡 PWA: SW cachea toda navegación bajo `/` (fallback offline impreciso); `VERSION` del SW no se autobumpea.
+- Otros: conectar OAuth Google/Facebook/Apple (hoy stubs), modo oscuro (no tocar aún), comprimir logo.
 
 **TSC siempre limpio antes de commit.**
