@@ -23,13 +23,35 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="theme-color" content="#10B981" />
         <meta
           name="description"
-          content="Alquiler de vehículos y propiedades entre miembros de las Fuerzas Militares de Colombia."
+          content="Alquila y publica carros, fincas y apartamentos de forma fácil, segura y confiable."
         />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Milink" />
+
+        {/* Open Graph / Twitter: vista previa al compartir el link en WhatsApp y
+            redes. URLs ABSOLUTAS — los crawlers no resuelven rutas relativas. La
+            imagen es el logo (public/icon1.png, 1024×1024). */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Milink" />
+        <meta property="og:title" content="Milink — Alquila vehículos y propiedades" />
+        <meta
+          property="og:description"
+          content="Alquila y publica carros, fincas y apartamentos de forma fácil, segura y confiable."
+        />
+        <meta property="og:url" content="https://milinkapp.com" />
+        <meta property="og:image" content="https://milinkapp.com/icon1.png" />
+        <meta property="og:image:width" content="1024" />
+        <meta property="og:image:height" content="1024" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Milink — Alquila vehículos y propiedades" />
+        <meta
+          name="twitter:description"
+          content="Alquila y publica carros, fincas y apartamentos de forma fácil, segura y confiable."
+        />
+        <meta name="twitter:image" content="https://milinkapp.com/icon1.png" />
 
         {/* Reset recomendado por Expo: evita el scroll del body, deja que las
             vistas de RN-web manejen el scroll igual que en móvil. */}

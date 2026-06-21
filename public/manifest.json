@@ -1,7 +1,7 @@
 {
   "name": "Milink",
   "short_name": "Milink",
-  "description": "Alquiler de vehículos y propiedades entre miembros de las Fuerzas Militares de Colombia.",
+  "description": "Alquila y publica carros, fincas y apartamentos de forma fácil, segura y confiable.",
   "lang": "es-CO",
   "start_url": "/",
   "scope": "/",
