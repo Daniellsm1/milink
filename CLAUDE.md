@@ -217,7 +217,7 @@ metro.config.js                 # Extiende Expo default + NativeWind CSS + .md e
 - **Carrusel "Nuevas entradas"** auto-scroll cada 2.5s con `scrollToOffset` (más fiable que `scrollToIndex`). Pausa cuando el usuario arrastra (`userDraggingRef`).
 - **BeneficiosCarousel** (rediseñado): scroll **manual** (sin auto-scroll), efecto **peek** (cards vecinas asomadas ~15% por lado, `cardWidth = min(width*0.70, 290)`), coverflow con Reanimated (`scale [0.85, 1, 0.85]`, `opacity [0.55, 1, 0.55]`). Fondo gradiente diagonal **"Atardecer"** (ámbar `#FBBF24` → coral `#FB7185`) con `expo-linear-gradient` (módulo nativo, evita el bug de SVG en Android). Card en dos capas: externa (sombra/elevation con `backgroundColor:#fff`) + interna (`overflow:hidden`, gradiente).
 - **Drawer lateral**: `Modal transparent` + Reanimated `useSharedValue` para `translateX` y `overlayOpacity` (280ms, `Easing.out(cubic)`). Ancho: `min(80% viewport, 320)`. Header con avatar+inicial (logueado) o logo (anon). 7 items de navegación + logout rojo. `goTo(ruta)` cierra drawer + `setTimeout(router.push, 280)`.
-- **Documentos institucionales**: 6 pantallas bajo `/docs/`, cada una renderiza `<MarkdownDoc source={require(...)} />`. `MarkdownDoc` usa `expo-asset` + `fetch(asset.localUri ?? asset.uri)` para cargar texto (NO `FileSystem.readAsStringAsync`, deprecado en SDK 54). Accesibles sin login.
+- **Documentos institucionales**: 6 pantallas bajo `/docs/`, cada una renderiza `<MarkdownDoc source={require(...)} />`. `MarkdownDoc` usa `expo-asset` + `fetch(asset.localUri ?? asset.uri)` para cargar texto (NO `FileSystem.readAsStringAsync`, deprecado en SDK 54). Accesibles sin login. **Excepción**: los T&C de publicación (`app/(tabs)/publish.tsx`) usan `TERMINOS_TEXTO` inlinado (ver más abajo), no `MarkdownDoc`.
 - **Detalle async + hero**: `fetchDetalleById` busca mocks → `vehiculos` → `propiedades`. Animación de entrada con Reanimated `Keyframe` en wrapper interno.
 - **Filtros**: `FiltrosSheet` con `mode: "vehiculo" | "propiedad"`. Acepta `categoriaFija`/`tipoFijo`.
 - **Form de publicar usa `useState` + Zod**, no React Hook Form.
@@ -226,7 +226,9 @@ metro.config.js                 # Extiende Expo default + NativeWind CSS + .md e
 - **Admin** gated por correo en `src/lib/admins.ts` + `public.es_admin()` en RLS.
 - **Corazón favorito como sibling**: en `VehicleCard`/`PropiedadCard` el `Pressable` del corazón es hermano (no hijo) del `Pressable` de la card, para evitar `<button>` anidados en web.
 - **"Mis publicaciones" + edición unificada**: una sola pantalla `editar/[tipo]/[id]` sirve a vehículos y propiedades. Reusa los Zod schemas y los componentes de `src/components/form/`. `PhotoPickerEdit` usa discriminated union `{ tipo: "existente"; url } | { tipo: "nueva"; uri }` para subir **solo las fotos nuevas** vía `subirImagenes(userId, tipoPlural, uris)`. Al guardar, el service inyecta `status: "pending_approval"` y la query del listado se invalida (`["mis-publicaciones", userId]`). Teléfono parseado con regex `/^(\+\d{1,3})(\d+)$/` para precargar `indicativo` + `telefono`.
-- **Detalle moderación admin**: el listado `/admin` ya no tiene botones inline — cada card navega a `/admin/moderar/[tipo]/[id]`. La pantalla de detalle muestra carrusel paginado de todas las fotos, todos los campos con componente `Campo({ label, value })`, bloque destacado de teléfono con botón **WhatsApp** (`Linking.openURL(\`https://wa.me/${tel}\`)`), y botones aprobar/rechazar con `useMutation` que invalida `["pendientes"]`.
+- **Detalle moderación admin**: el listado `/admin` ya no tiene botones inline — cada card navega a `/admin/moderar/[tipo]/[id]`. La pantalla de detalle muestra carrusel paginado de todas las fotos, todos los campos con componente `Campo({ label, value })`, bloque destacado de teléfono con botón **WhatsApp** (`Linking.openURL(\`https://wa.me/${tel}\`)`), y botones aprobar/rechazar. "Rechazar" abre un modal con textarea para `motivo_rechazo` (opcional). Ambas mutations llaman RPC `moderar_publicacion` e invalidan `["pendientes"]` **y** `["mis-publicaciones"]`.
+- **PII protegida (contacto propietario)**: `telefono_contacto` y `nombre_propietario` **no son legibles por `anon`** (column-level REVOKE, migración 0008). En `app/vehicle/[id].tsx` el contacto se carga lazy (`queryKey: ["contacto", tipo, id]`, `enabled: !!user`) via RPC `obtener_contacto_publicacion`. Usuarios anónimos ven "Propietario verificado". Forms de publicar (`app/(tabs)/publish.tsx`) y editar (`app/mis-publicaciones/editar/[tipo]/[id].tsx`) incluyen checkbox de consentimiento (`consientoContacto`) requerido para guardar.
+- **Términos de publicación inline**: `app/(tabs)/publish.tsx` renderiza `TERMINOS_TEXTO` de `src/content/terminosPublicacion.ts` (string literal completo). Elimina dependencia de `expo-asset + fetch` que falla intermitentemente en hosts web estáticos.
 
 ---
 
@@ -235,18 +237,19 @@ metro.config.js                 # Extiende Expo default + NativeWind CSS + .md e
 ### Tablas (schema `public`)
 
 #### `vehiculos`
-Campos clave: `id`, `usuario_id` → `auth.users(id)`, `marca`, `modelo`, `ano`, `categoria` (enum: automovil/camioneta/motocicleta), `transmision`, `tipo_combustible`, `color`, `numero_sillas`, `kilometraje`, `kilometraje_permitido_diario`, `precio_alquiler_diario`, `ciudad_entrega_principal`, `ciudad_entrega_opcional`, `tiene_aire_acondicionado`, `imagenes text[]`, `status` (pending_approval/approved/rejected), `telefono_contacto`, `nombre_propietario`, timestamps.
+Campos clave: `id`, `usuario_id` → `auth.users(id)`, `marca`, `modelo`, `ano`, `categoria` (enum: automovil/camioneta/motocicleta), `transmision`, `tipo_combustible`, `color`, `numero_sillas`, `kilometraje`, `kilometraje_permitido_diario`, `precio_alquiler_diario`, `ciudad_entrega_principal`, `ciudad_entrega_opcional`, `tiene_aire_acondicionado`, `imagenes text[]`, `status` (pending_approval/approved/rejected), `telefono_contacto`, `nombre_propietario`, `motivo_rechazo`, timestamps.
 
 #### `propiedades`
-Campos clave: `id`, `usuario_id`, `tipo_propiedad` (finca/apartamento/casa), `titulo`, `descripcion`, `departamento`, `ciudad_municipio`, `precio_alquiler_diario`, `capacidad_huespedes`, `numero_habitaciones/camas/banos`, amenidades booleanas, `imagenes text[]`, `status`, `telefono_contacto`, `nombre_propietario`, timestamps.
+Campos clave: `id`, `usuario_id`, `tipo_propiedad` (finca/apartamento/casa), `titulo`, `descripcion`, `departamento`, `ciudad_municipio`, `precio_alquiler_diario`, `capacidad_huespedes`, `numero_habitaciones/camas/banos`, amenidades booleanas, `imagenes text[]`, `status`, `telefono_contacto`, `nombre_propietario`, `motivo_rechazo`, timestamps.
 
 #### `resenas`
 Polimórfica con XOR check: solo uno de `vehiculo_id`/`propiedad_id` non-null. `calificacion` int CHECK 1..5.
 
 ### RLS (resumen)
-- `select`: público solo ve `approved`; dueño ve los suyos; admins ven todos.
+- `select`: `anon` ve `approved` pero **NO** `telefono_contacto`/`nombre_propietario` (column-level REVOKE). `authenticated` ve todo lo que RLS permite. Dueño ve los suyos. Admins ven todos.
 - `insert`: solo authenticated, `auth.uid() = usuario_id`, `status = 'pending_approval'`.
-- `update`/`delete`: dueño (forzando pending). Admins: policy update separada para `status`.
+- `update`/`delete`: dueño (forzando pending). **Admin NO tiene policy UPDATE directa** — usa RPC `moderar_publicacion` (SECURITY DEFINER, toca solo `status` y `motivo_rechazo`).
+- Contacto PII: solo disponible vía RPC `obtener_contacto_publicacion(tipo, id)` para `authenticated`; devuelve error si `auth.uid() is null`.
 
 ### Storage
 - Bucket **`publicaciones`** (público). Insert/update/delete solo en `{auth.uid()}/...`.
@@ -264,8 +267,10 @@ Polimórfica con XOR check: solo uno de `vehiculo_id`/`propiedad_id` non-null. `
 | 0005 | `0005_nombre_propietario.sql` | Columna `nombre_propietario` + backfill con `SECURITY DEFINER` |
 | 0006 | `0006_admin_usuarios.sql` | RPC `admin_eliminar_usuario(p_user_id)` (SECURITY DEFINER) + listado admin |
 | 0007 | `0007_cuenta_y_ugc.sql` | RPC `eliminar_mi_cuenta()` + tablas `reportes`/`bloqueos` + `admin_listar_reportes()` |
+| 0008 | `0008_pii_contacto_protegida.sql` | REVOKE/GRANT column-level en `vehiculos`/`propiedades` para `anon` (excluye `telefono_contacto` y `nombre_propietario`); RPC `obtener_contacto_publicacion(p_tipo, p_id)` SECURITY DEFINER, solo `authenticated` |
+| 0009 | `0009_moderacion_rpc.sql` | Columna `motivo_rechazo` en ambas tablas; RPC `moderar_publicacion(p_tipo, p_id, p_nuevo_status, p_motivo)` SECURITY DEFINER; elimina policies `*_update_admin` directas |
 
-**Status:** todas aplicadas en el proyecto `mucpwtieilxgasxagujo`.
+**Status:** 0001–0009 aplicadas en el proyecto `mucpwtieilxgasxagujo`.
 
 > **Nota:** MCP de Supabase NO conectado a la cuenta del usuario. Migraciones nuevas van a `supabase/migrations/` y el usuario las pega en SQL Editor.
 
@@ -309,6 +314,8 @@ eas build --profile development --platform android  # Build de desarrollo
 14. **Web `output: "static"` hace SSR en Node — `window` no existe ahí**: Expo Router pre-renderiza cada ruta en Node antes de servir el bundle. Cualquier código que toque `window` (AsyncStorage, `detectSessionInUrl` de Supabase, `localStorage`) **revienta el `expo export -p web`** con `ReferenceError: window is not defined`. **Regla:** guard con `typeof window !== "undefined"` todo acceso al DOM/Web Storage en código que corra en el render inicial. En `sessionStorage.ts` el branch web es no-op cuando no hay window (no hay sesión que recuperar en SSR; el cliente la lee al hidratar). El TSC no atrapa esto — solo se ve al exportar.
 15. **`numColumns` en `FlatList` requiere remount al cambiar**: si haces el feed responsive (2 col móvil → 4 col escritorio) tienes que pasar `key={\`cols-${n}\`}` para forzar el remount; cambiar `numColumns` en caliente lanza warning de RN y no toma efecto. Patrón usado en feed, favoritos y categoría.
 16. **Ancho máximo en PWA sin romper móvil**: usar **siempre** `useWebMaxWidth(n)` de `src/lib/responsive.ts` (devuelve `null` si `Platform.OS !== "web"` o si `width < 768`). Mezclarlo en el `contentContainerStyle` del scroll y en las barras header/footer fijas. **No** introducir colores ni layouts solo-web — un iPhone (~390px) debe ver lo mismo que la app nativa.
+17. **`Alert.alert` no funciona con botones en web**: `Alert.alert` con buttons en React Native Web solo renderiza `window.alert` (sin botones propios). Para confirmaciones que requieran acción (ej. "¿Iniciar sesión?"), usar `Platform.OS === "web"` + `window.confirm`. Patrón implementado en `app/vehicle/[id].tsx` (`exigirSesion`).
+18. **`expo-asset + fetch` puede fallar en hosts web estáticos**: la URI bundleada de archivos `.md` no siempre se resuelve en exports estáticos. Alternativa 100% confiable: inlinear el texto como constante TypeScript (ver `src/content/terminosPublicacion.ts` + `TERMINOS_TEXTO`). Los docs institucionales (`/docs/*`) siguen con `MarkdownDoc` + `expo-asset` porque son menos críticos; si empiezan a fallar, migrar al mismo patrón inline.
 
 ---
 
@@ -340,7 +347,7 @@ Editar `src/components/icons.tsx`: Stroke (`Stroke` wrapper) para lineales, Fill
 
 ## Estado actual (snapshot junio 2026)
 
-**Flujo completo funcional**: registro → login → publicar (T&C + form + 3 fotos + modal) → admin aprueba/rechaza desde detalle de moderación → aparece en Explorar (mixto veh+prop) y en su categoría → detalle con propietario real, teléfono y WhatsApp link. El dueño ve sus publicaciones en "Mis publicaciones" con badge de estado y puede editarlas (vuelven a `pending_approval`). Auth real con Supabase Auth, sesión persistida en AsyncStorage. Storage real: fotos suben a bucket `publicaciones`.
+**Flujo completo funcional**: registro → login → publicar (T&C + form + 3 fotos + modal) → admin aprueba/rechaza (con motivo opcional) desde detalle de moderación → aparece en Explorar (mixto veh+prop) y en su categoría → detalle con propietario real, teléfono y WhatsApp link (solo para autenticados). El dueño ve sus publicaciones en "Mis publicaciones" con badge de estado y motivo de rechazo si aplica, y puede editarlas (vuelven a `pending_approval`). Auth real con Supabase Auth, sesión persistida en AsyncStorage. Storage real: fotos suben a bucket `publicaciones`.
 
 **Funcionalidades recientes**:
 - **Fase 2 PWA (en curso, §6–§10 del plan)**: el mismo código exporta a `dist/` como PWA estática (`web.output: "static"` en `app.json`). Stack web:
@@ -361,7 +368,10 @@ Editar `src/components/icons.tsx`: Stroke (`Stroke` wrapper) para lineales, Fill
 - **Drawer lateral**: menú hamburguesa con navegación a docs y cuenta (incluye "Mis publicaciones"), animado con Reanimated.
 - **6 documentos institucionales**: términos, privacidad, sobre nosotros, FAQ, beneficios, guía de uso seguro. Renderizados con react-native-markdown-display. Accesibles sin login.
 - **Categorías con WebP**: imágenes WebP en las píldoras de categoría (camionetas/carros 10% más grandes).
+- **Protección PII del propietario** (migración 0008): `telefono_contacto` y `nombre_propietario` ocultos para `anon` via column-level REVOKE. Contacto cargado lazy con RPC `obtener_contacto_publicacion` solo para `authenticated`. Anónimos ven "Propietario verificado". Checkbox de consentimiento en publicar y editar.
+- **Moderación admin vía RPC + motivo de rechazo** (migración 0009): policies UPDATE directas del admin eliminadas; admin llama RPC `moderar_publicacion` (SECURITY DEFINER). Modal de rechazo con textarea para motivo opcional. El motivo aparece en "Mis publicaciones" bajo la card rechazada (bloque rojo). Mutations invalidan `["pendientes"]` y `["mis-publicaciones"]`.
+- **Términos de publicación inline**: `TERMINOS_TEXTO` como constante en `src/content/terminosPublicacion.ts`; elimina fallo de `expo-asset + fetch` en web estático.
 
-**Pendientes conocidos**: comprimir logo (~5 MB), conectar OAuth Google/Facebook/Apple (hoy son stubs), modo oscuro (no tocar aún).
+**Pendientes conocidos**: comprimir logo (~5 MB), conectar OAuth Google/Facebook/Apple (hoy son stubs), modo oscuro (no tocar aún), despliegue PWA en Vercel/Cloudflare (§11 del plan).
 
 **TSC siempre limpio antes de commit.**
