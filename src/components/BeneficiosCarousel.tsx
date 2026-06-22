@@ -81,7 +81,11 @@ function GradientBackground() {
       colors={[GRAD_INICIO, GRAD_FIN]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={StyleSheet.absoluteFill}
+      // zIndex -1 deja el gradiente DETRÁS del contenido. En web, react-native-svg
+      // renderiza el ícono con position:static y queda debajo de este absoluteFill
+      // (el texto de RN-Web es position:relative y sí queda encima); sin esto, en
+      // web el ícono se ve tapado por el gradiente. Inocuo en nativo.
+      style={[StyleSheet.absoluteFill, { zIndex: -1 }]}
     />
   );
 }

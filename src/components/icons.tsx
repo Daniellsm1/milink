@@ -33,6 +33,10 @@ const Stroke = ({
     strokeWidth={strokeWidth}
     strokeLinecap="round"
     strokeLinejoin="round"
+    // Caja CSS explícita: en web react-native-svg solo pone width/height como
+    // atributos del <svg>; sin esto el icono colapsa a 0 dentro de un flex
+    // column centrado (ej. tarjetas de "¿Por qué MiLink?"). Inocuo en nativo.
+    style={{ width: size, height: size }}
   >
     {children}
   </Svg>
@@ -261,7 +265,15 @@ const Filled = ({
   color = "currentColor",
   children,
 }: IconProps & { children: React.ReactNode }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+  <Svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill={color}
+    // Caja CSS explícita (ver nota en Stroke): evita que el <svg> colapse a 0
+    // en web dentro de un flex column centrado.
+    style={{ width: size, height: size }}
+  >
     {children}
   </Svg>
 );
