@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -30,21 +29,25 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Feedback inline: Alert es no-op en react-native-web; mostramos el error en
+  // la propia pantalla para que sea visible también en la web.
+  const [error, setError] = useState<string | null>(null);
   const webMax = useWebMaxWidth(440);
 
   const handleLogin = async () => {
+    setError(null);
     if (!email.trim() || !password) {
-      Alert.alert("Faltan datos", "Ingresa tu correo y contraseña.");
+      setError("Ingresa tu correo y contraseña.");
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
     setLoading(false);
-    if (error) {
-      Alert.alert("No pudimos iniciar sesión", error.message);
+    if (signInError) {
+      setError(signInError.message);
       return;
     }
     router.back();
@@ -152,6 +155,15 @@ export default function Login() {
               </Text>
             </Pressable>
           </View>
+
+          {error ? (
+            <Text
+              className="text-[13.5px] font-quicksand-medium text-center mb-4"
+              style={{ color: "#EF4444" }}
+            >
+              {error}
+            </Text>
+          ) : null}
 
           {/* Botón ingresar */}
           <View className="items-center">

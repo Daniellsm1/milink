@@ -1,8 +1,8 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import * as ExpoLinking from "expo-linking";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -32,40 +33,52 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Feedback inline: Alert es no-op en react-native-web, así que mensajes y
+  // éxito se muestran en la propia pantalla (igual que forgot-password.tsx).
+  const [error, setError] = useState<string | null>(null);
+  const [registrado, setRegistrado] = useState(false);
   const webMax = useWebMaxWidth(440);
 
   const handleRegister = async () => {
+    setError(null);
     if (!nombre.trim() || !email.trim() || !password) {
-      Alert.alert("Faltan datos", "Completa nombre, correo y contraseña.");
+      setError("Completa nombre, correo y contraseña.");
       return;
     }
     if (password.length < 6) {
-      Alert.alert(
-        "Contraseña muy corta",
-        "La contraseña debe tener al menos 6 caracteres."
-      );
+      setError("La contraseña debe tener al menos 6 caracteres.");
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
+    // A dónde vuelve el usuario tras tocar el enlace de confirmación del correo:
+    // en nativo milink://, en web la URL absoluta actual (https://milinkapp.com/).
+    const emailRedirectTo = ExpoLinking.createURL("/");
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { nombre: nombre.trim() } },
+      options: { data: { nombre: nombre.trim() }, emailRedirectTo },
     });
     setLoading(false);
-    if (error) {
-      Alert.alert("No pudimos registrarte", error.message);
+    if (signUpError) {
+      setError(signUpError.message);
       return;
     }
     if (data.session) {
       // Sesión activa de inmediato (confirmación de correo desactivada)
       router.replace("/(tabs)/profile");
     } else {
-      Alert.alert(
-        "Revisa tu correo",
-        "Te enviamos un enlace para confirmar tu cuenta. Luego inicia sesión.",
-        [{ text: "Entendido", onPress: () => router.replace("/auth/login") }]
-      );
+      // Confirmación de correo activada: pantalla inline "Revisa tu correo".
+      setRegistrado(true);
+    }
+  };
+
+  const abrirCorreo = async () => {
+    if (Platform.OS === "web") return;
+    const url = Platform.OS === "ios" ? "message://" : "mailto:";
+    try {
+      await Linking.openURL(url);
+    } catch {
+      // Silencio: si no hay app de correo, el usuario lo abre manual.
     }
   };
 
@@ -106,6 +119,50 @@ export default function Register() {
             />
           </View>
 
+          {registrado ? (
+            <>
+              <Text className="font-quicksand-bold text-[24px] text-ink text-center mb-3">
+                Revisa tu correo
+              </Text>
+              <Text className="text-[14.5px] text-muted font-quicksand-medium text-center leading-6 mb-8">
+                Te enviamos un enlace de confirmación a {email.trim()}. Ábrelo
+                para activar tu cuenta y luego inicia sesión.
+              </Text>
+              <View className="items-center gap-3">
+                {Platform.OS !== "web" ? (
+                  <Pressable
+                    onPress={abrirCorreo}
+                    accessibilityRole="button"
+                    accessibilityLabel="Abrir correo"
+                    className="w-56 h-14 rounded-full items-center justify-center bg-accent active:opacity-90"
+                    style={{
+                      shadowColor: COLORS.accent,
+                      shadowOpacity: 0.4,
+                      shadowRadius: 12,
+                      shadowOffset: { width: 0, height: 6 },
+                      elevation: 6,
+                    }}
+                  >
+                    <Text className="font-quicksand-bold text-[15px] text-white tracking-wider">
+                      ABRIR CORREO
+                    </Text>
+                  </Pressable>
+                ) : null}
+                <Pressable
+                  onPress={() => router.replace("/auth/login")}
+                  accessibilityRole="button"
+                  accessibilityLabel="Volver al inicio de sesión"
+                  hitSlop={8}
+                  className="mt-2"
+                >
+                  <Text className="text-[14px] text-accent font-quicksand-bold">
+                    Volver al inicio de sesión
+                  </Text>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+          <>
           <Text className="font-quicksand-bold text-[28px] text-ink text-center mb-2">
             Crear cuenta
           </Text>
@@ -172,6 +229,15 @@ export default function Register() {
             </Pressable>
           </View>
 
+          {error ? (
+            <Text
+              className="text-[13.5px] font-quicksand-medium text-center mb-4"
+              style={{ color: "#EF4444" }}
+            >
+              {error}
+            </Text>
+          ) : null}
+
           <View className="items-center">
             <Pressable
               onPress={handleRegister}
@@ -213,6 +279,8 @@ export default function Register() {
               </Text>
             </Pressable>
           </View>
+          </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
