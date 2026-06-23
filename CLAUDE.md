@@ -289,7 +289,7 @@ Polimórfica con XOR check: solo uno de `vehiculo_id`/`propiedad_id` non-null. `
 | 0010 | `0010_limpiar_fotos_al_rechazar.sql` | Policy `publicaciones_delete_admin` en storage + RPC `moderar_publicacion` ahora limpia `imagenes` al rechazar |
 | 0011 | `0011_cuota_publicaciones.sql` | Trigger `verificar_cuota_publicaciones` (BEFORE INSERT) — máx. 5 publicaciones `pending_approval` por usuario |
 
-**Status:** 0001–0009 aplicadas en el proyecto `mucpwtieilxgasxagujo`. **0010 y 0011 creadas, pendientes de pegar en el SQL Editor.**
+**Status:** **0001–0011 todas aplicadas** en el proyecto `mucpwtieilxgasxagujo`.
 
 > **Nota:** MCP de Supabase NO conectado a la cuenta del usuario. Migraciones nuevas van a `supabase/migrations/` y el usuario las pega en SQL Editor.
 
@@ -302,6 +302,10 @@ Polimórfica con XOR check: solo uno de `vehiculo_id`/`propiedad_id` non-null. `
 `app.json`: `scheme: "milink"` (deep link para el enlace de recuperación de contraseña en nativo). `android.adaptiveIcon.foregroundImage` apunta a `assets/icon1.png` (icono del home). `web` con `output: "static"`, `themeColor: "#10B981"`. `.claude/` está en `.gitignore` (skills locales, ~53MB — no van al repo).
 
 Sesión: adaptador por plataforma en `src/lib/sessionStorage.ts` — **SecureStore con chunking ~1.8KB en nativo** (cifrado en Keychain/Keystore), **AsyncStorage en web** (con fallback no-op en SSR). Cableado en `supabase.ts` como `auth.storage` + `detectSessionInUrl: Platform.OS === "web" && typeof window !== "undefined"`. Polyfill URL via `react-native-url-polyfill/auto`.
+
+**Email transaccional:** Resend configurado como SMTP personalizado en Supabase Auth (dashboard → Authentication → SMTP Settings). Todos los emails de auth (confirmación de correo, enlace de recuperación de contraseña) se envían vía Resend. Las credenciales SMTP de Resend no van al repo.
+
+**Deploy web:** PWA desplegada en producción en **milinkapp.com** (Vercel). Build: `expo export -p web` → `dist/`. Variable de entorno `EXPO_PUBLIC_SUPABASE_*` configurada en Vercel.
 
 ---
 
@@ -384,7 +388,8 @@ Editar `src/components/icons.tsx`: Stroke (`Stroke` wrapper) para lineales, Fill
   - `src/lib/sessionStorage.ts` = SecureStore nativo (chunked) | AsyncStorage web | no-op SSR.
   - `src/lib/responsive.ts` = `useWebMaxWidth(n)` + `useCardColumns()` (breakpoint 768px → móvil/nativo intacto).
   - Splash animado se salta en web (`Platform.OS === "web"` en `_layout.tsx`).
-  - Pendiente (§11): despliegue en Vercel/Cloudflare. Iconos PWA (`public/icons/`) y `dist/` ya quedan listos para CDN estático.
+- **PWA en producción en milinkapp.com** (Vercel): da las URLs públicas de Política de Privacidad y eliminación de cuenta que Play exige. Redirect URLs de recuperación configuradas en Supabase.
+- **Resend como SMTP de Supabase**: emails de auth (confirmación, recuperación) se envían vía Resend (configurado en dashboard, no en código).
 - **"Mis publicaciones"**: listado del dueño con badges (En revisión / Aprobada / Rechazada) + form unificado de edición para vehículo y propiedad (precarga datos, sube solo fotos nuevas, status → pending_approval). Accesible desde Perfil y Drawer.
 - **Detalle de moderación admin**: carrusel de todas las fotos, todos los campos del formulario, bloque de teléfono con botón WhatsApp, botones aprobar/rechazar. Listado admin pasó a ser solo navegación (card → detalle), sin botones inline.
 - **BeneficiosCarousel rediseñado**: gradiente diagonal "Atardecer" (ámbar → coral) con `expo-linear-gradient` + peek manual (sin auto-scroll) que muestra las cards vecinas asomadas para invitar a deslizar.
@@ -401,9 +406,8 @@ Editar `src/components/icons.tsx`: Stroke (`Stroke` wrapper) para lineales, Fill
 - **Términos de publicación inline**: `TERMINOS_TEXTO` como constante en `src/content/terminosPublicacion.ts`; elimina fallo de `expo-asset + fetch` en web estático.
 
 **Pendientes conocidos** (ver `PLAN_PUBLICACION_Y_PWA.md` para detalle/prioridad):
-- 🔴 Desplegar PWA (§11) → da las URLs públicas de Política de Privacidad y eliminación de cuenta que Play exige.
-- 🔴 Pegar migraciones **0010 y 0011** en el SQL Editor.
-- 🟠 Activar confirmación de correo + Redirect URLs de recuperación (manual al desplegar) + CAPTCHA.
+- 🔴 Assets ficha Play Store: IARC, ícono 512×512, gráfico 1024×500, capturas, descripción.
+- 🟠 Activar confirmación de correo + Redirect URLs de recuperación (manual en Supabase) + CAPTCHA.
 - 🟠 Error Boundary global + Sentry (no hay manejo de crashes).
 - 🟡 Higiene: `git rm -r --cached .claude` (ya en `.gitignore`); quitar deps muertas (`react-hook-form`, `expo-notifications`, `expo-file-system` — confirmado sin imports); thumbnails del feed (`?width=`); tests; admin email en tabla `roles`.
 - 🟡 PWA: SW cachea toda navegación bajo `/` (fallback offline impreciso); `VERSION` del SW no se autobumpea.

@@ -32,8 +32,8 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-title" content="Milink" />
 
         {/* Open Graph / Twitter: vista previa al compartir el link en WhatsApp y
-            redes. URLs ABSOLUTAS — los crawlers no resuelven rutas relativas. La
-            imagen es el logo (public/icon1.png, 1024×1024). */}
+            redes. URLs ABSOLUTAS — los crawlers no resuelven rutas relativas.
+            Imagen social en public/og-image.png (1200×630, summary_large_image). */}
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Milink" />
         <meta property="og:title" content="Milink — Alquila vehículos y propiedades" />
@@ -42,16 +42,16 @@ export default function Root({ children }: PropsWithChildren) {
           content="Alquila y publica carros, fincas y apartamentos de forma fácil, segura y confiable."
         />
         <meta property="og:url" content="https://milinkapp.com" />
-        <meta property="og:image" content="https://milinkapp.com/icon1.png" />
-        <meta property="og:image:width" content="1024" />
-        <meta property="og:image:height" content="1024" />
-        <meta name="twitter:card" content="summary" />
+        <meta property="og:image" content="https://milinkapp.com/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Milink — Alquila vehículos y propiedades" />
         <meta
           name="twitter:description"
           content="Alquila y publica carros, fincas y apartamentos de forma fácil, segura y confiable."
         />
-        <meta name="twitter:image" content="https://milinkapp.com/icon1.png" />
+        <meta name="twitter:image" content="https://milinkapp.com/og-image.png" />
 
         {/* Reset recomendado por Expo: evita el scroll del body, deja que las
             vistas de RN-web manejen el scroll igual que en móvil. */}

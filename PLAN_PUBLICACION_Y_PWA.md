@@ -40,26 +40,28 @@
 **Ficha Play Store**
 - ✅ **Data safety (§1.4)**: guía de declaración lista (correo, nombre, teléfono,
   fotos, ubicación aproximada, contenido; cifrado en tránsito; eliminación de
-  cuenta). Es un formulario manual en Play Console — pendiente solo de pegarlo
-  cuando exista la URL de eliminación (depende del deploy §11).
+  cuenta). Es un formulario manual en Play Console — URL de eliminación disponible
+  en milinkapp.com (ya desplegado). Pendiente solo de pegarlo en Play Console.
 - ✅ **Target SDK (§1.5)**: Expo 54 / RN 0.81 apunta a API 35 → cumple hoy.
 
-> **Atención migraciones:** 0001–0009 aplicadas en `mucpwtieilxgasxagujo`.
-> **0010 y 0011 creadas pero pendientes de pegar en el SQL Editor.**
+**PWA y despliegue**
+- ✅ **PWA desplegada en [milinkapp.com](https://milinkapp.com)** (Vercel, HTTPS, CDN,
+  build estático `expo export -p web`).
+- ✅ **Política de Privacidad en URL pública**: milinkapp.com/docs/politica-privacidad
+  (accesible sin login — cumple requisito Play).
+- ✅ **URL pública de eliminación de cuenta**: disponible en milinkapp.com +
+  botón in-app + RPC `eliminar_mi_cuenta` (cumple requisito Play).
+- ✅ **Resend como SMTP de Supabase**: emails de auth (confirmación de correo,
+  recuperación de contraseña) se envían vía Resend. Configurado en Supabase
+  dashboard → Authentication → SMTP Settings (no aparece en el código del repo).
+
+> **Migraciones:** 0001–0011 **todas aplicadas** en `mucpwtieilxgasxagujo`.
 
 ---
 
 # PENDIENTE
 
-## 1. 🔴 Bloqueantes de Play (todos dependen del deploy de la PWA, §11)
-
-### 1.1 URL pública de eliminación de cuenta
-El botón in-app ya existe (`profile.tsx` + RPC `eliminar_mi_cuenta`). Falta la
-**URL web pública** con instrucciones + correo de contacto. La sirve la PWA (§11).
-
-### 1.3 Política de Privacidad en URL pública
-Existe in-app (`app/docs/politica-privacidad.tsx`). Play exige **URL accesible
-sin login**, enlazada en la ficha y en la app. La sirve la PWA (§11).
+## 1. 🔴 Bloqueantes de Play
 
 ### 1.9 Assets de ficha (manual, sin código)
 Clasificación IARC, ícono 512×512, gráfico de funciones 1024×500, 2–8 capturas
@@ -153,28 +155,12 @@ para ver errores reales en producción.
 
 ---
 
-## 11. 🔴 Despliegue de la PWA (desbloquea 1.1 y 1.3)
-
-`dist/` y `public/` listos para CDN estático.
-- Hospedar en **Vercel / Cloudflare Pages / Netlify** (HTTPS + CDN gratis).
-- Con `web.output: "static"` Expo genera rutas reales — sin redirects SPA.
-- Esta misma web sirve **gratis** la URL de Política de Privacidad (1.3) y la de
-  eliminación de cuenta (1.1). 🎯
-- Tras desplegar: registrar las Redirect URLs de recuperación de contraseña en
-  Supabase (ver §2.5).
-- CI opcional: GitHub Action que en cada push a `main` corra
-  `npx expo export -p web` y despliegue.
-
----
-
 ## Orden sugerido
 
-1. **Desplegar PWA (§11)** → da las URLs y desbloquea 1.1 y 1.3.
-2. **Pegar migraciones 0010 y 0011** en el SQL Editor.
-3. Completar ficha de Play: Data safety + IARC + assets (1.9).
-4. Activar confirmación de correo + Redirect URLs + (CAPTCHA) (2.5).
-5. Error Boundary + Sentry (2.x).
-6. Higiene: `git rm -r --cached .claude`, quitar deps muertas, thumbnails, tests.
+1. Completar ficha de Play: IARC + assets (1.9).
+2. Activar confirmación de correo + Redirect URLs en Supabase (2.5).
+3. Error Boundary + Sentry (2.x).
+4. Higiene: `git rm -r --cached .claude`, quitar deps muertas, thumbnails, tests.
 
 ---
 
