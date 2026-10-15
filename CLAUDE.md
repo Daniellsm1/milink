@@ -25,7 +25,7 @@ admin** antes de aparecer en el feed público.
 | Auth / DB / Storage | Supabase JS | 2.106.2 |
 | Sesión (cliente) | `@react-native-async-storage/async-storage` + `react-native-url-polyfill` | ✓ |
 | Data fetching | TanStack React Query | 5.100.14 |
-| Animaciones | Reanimated 4 + react-native-worklets | 4.1.1 / 0.8.3 |
+| Animaciones | Reanimated 4 + react-native-worklets | 4.1.1 / 0.5.1 |
 | Iconos | `react-native-svg` (vector propio) | 15.12.1 |
 | Imágenes | `expo-image` + `expo-image-picker` + `expo-image-manipulator` | ✓ |
 | Blur | `expo-blur` | ~15.0.8 |
@@ -77,6 +77,7 @@ admin** antes de aparecer en el feed público.
 ```
 app/                            # Expo Router (rutas)
 ├── _layout.tsx                 # Stack root + Providers + SplashOverlay + prefetch
+├── +html.tsx                   # HTML root del export web (meta PWA + Open Graph + registro SW)
 ├── (tabs)/
 │   ├── _layout.tsx             # CustomTabBar (BlurView absolute)
 │   ├── index.tsx               # Explorar: hero + carrusel + categorías + grid mixto + beneficios
@@ -109,6 +110,8 @@ app/                            # Expo Router (rutas)
 │       └── [tipo]/[id].tsx     # Form edición unificado veh/prop (precarga + upload selectivo)
 └── admin/
     ├── index.tsx               # Panel de moderación (gated por correo, cards navegan)
+    ├── usuarios.tsx            # Listado de usuarios registrados + eliminar (RPC admin)
+    ├── reportes.tsx            # Listado de reportes UGC (RPC admin_listar_reportes)
     └── moderar/
         └── [tipo]/[id].tsx     # Detalle moderación: carrusel fotos + campos + WhatsApp + aprobar/rechazar
 
@@ -155,6 +158,7 @@ src/
 │   ├── responsive.ts           # useWebMaxWidth(n) + useCardColumns() (breakpoint 768px)
 │   ├── sessionStorage.ts       # SecureStore chunked (nativo) | AsyncStorage (web) | no-op SSR
 │   ├── admins.ts               # ADMIN_EMAILS + esAdmin(user)
+│   ├── eliminarCuentaFlow.tsx  # Flujo de confirmación para eliminar la propia cuenta
 │   └── validation/
 │       └── publicacion.ts      # Zod: vehiculoSchema, propiedadSchema
 ├── services/
@@ -165,6 +169,7 @@ src/
 │   ├── reportes.ts             # reportar() — UGC
 │   ├── bloqueos.ts             # bloquearUsuario/listarBloqueados — UGC
 │   ├── cuenta.ts               # eliminarMiCuenta() (RPC)
+│   ├── adminUsuarios.ts        # listarUsuariosRegistrados + eliminarUsuario (RPCs admin)
 │   └── misPublicaciones.ts     # getMisPublicaciones, get/actualizarVehiculo|Propiedad (edición)
 ├── theme/
 │   └── colors.ts               # COLORS y FONTS tokens
@@ -186,6 +191,14 @@ assets/
 │   ├── 05_Beneficios_de_usar_MiLink.md
 │   └── 06_Guia_de_Uso_Seguro_y_Requisitos.md
 └── legal/terminos_condiciones_publicacion.md
+
+playstore-assets/               # Assets de la ficha Play Store (ya en git)
+├── application-*.aab           # Android App Bundle compilado
+├── icon-512.png                # Ícono 512×512
+├── feature-graphic-1024x500.png# Gráfico de funciones
+├── screenshots/                # 6 capturas (explorar, detalle, categoría, favoritos, publicar×2)
+├── raw/                        # Capturas originales sin procesar
+└── textos-ficha-play.md        # Nombre, descripción corta/larga, IARC, App access
 
 metro.config.js                 # Extiende Expo default + NativeWind CSS + .md en assetExts
 ```
@@ -212,6 +225,8 @@ metro.config.js                 # Extiende Expo default + NativeWind CSS + .md e
 | `/mis-publicaciones/editar/[tipo]/[id]` | Form edición unificado veh/prop | Botón "Editar" en card aprobada/rechazada |
 | `/admin` | Panel de moderación (listado pendientes) | Perfil (solo si `esAdmin(user)`) |
 | `/admin/moderar/[tipo]/[id]` | Detalle moderación con fotos+campos+WhatsApp+aprobar/rechazar | Tap en card del listado admin |
+| `/admin/usuarios` | Listado de usuarios registrados + eliminar | Panel admin (solo `esAdmin`) |
+| `/admin/reportes` | Listado de reportes UGC | Panel admin (solo `esAdmin`) |
 
 ---
 
@@ -246,6 +261,8 @@ metro.config.js                 # Extiende Expo default + NativeWind CSS + .md e
 - **Fotos eliminadas al rechazar** (migración 0010): el RPC `moderar_publicacion` limpia `imagenes = '{}'` en rechazos; `rechazar()` en `moderacion.ts` recibe las URLs y borra los archivos del bucket (best-effort) tras el RPC. Policy `publicaciones_delete_admin` permite al admin borrar archivos de cualquier usuario.
 - **Búsqueda saneada**: `buscarMixto` (`feed.ts`) hace `query.trim().replace(/[,()%]/g, "")` antes de construir el filtro `.or()` de PostgREST → evita inyección de filtros. Los `.ilike(col, valor)` con valor parametrizado ya son seguros.
 - **UGC moderable** (migración 0007): `reportar()` y `bloquearUsuario()` cableados en `app/vehicle/[id].tsx` (detalle). `eliminar_mi_cuenta()` RPC desde el perfil. Requisito de Play para apps con contenido de usuarios.
+- **Gestión admin de usuarios y reportes**: `app/admin/usuarios.tsx` lista los usuarios registrados (RPC `admin_listar_usuarios`, migración 0006) y permite eliminarlos vía `src/services/adminUsuarios.ts` (`eliminarUsuario` → borra fotos de storage + RPC `admin_eliminar_usuario`). `app/admin/reportes.tsx` lista los reportes UGC (RPC `admin_listar_reportes`, migración 0007). Ambas gated por `esAdmin(user)`.
+- **Eliminar cuenta propia**: `src/lib/eliminarCuentaFlow.tsx` exporta el hook `useEliminarCuenta()` (`{ trigger, modal }`) con doble confirmación cross-platform: `Alert.alert` de advertencia → `Modal` con `TextInput` que exige escribir "ELIMINAR" para habilitar el botón. Al confirmar llama `eliminarMiCuenta()` + `signOut()` y redirige a `/`.
 
 ---
 

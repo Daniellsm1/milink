@@ -43,6 +43,9 @@
   cuenta). Es un formulario manual en Play Console — URL de eliminación disponible
   en milinkapp.com (ya desplegado). Pendiente solo de pegarlo en Play Console.
 - ✅ **Target SDK (§1.5)**: Expo 54 / RN 0.81 apunta a API 35 → cumple hoy.
+- ✅ **Assets de ficha generados**: `playstore-assets/` (en git) con ícono 512×512,
+  gráfico 1024×500, 6 capturas, textos completos (corta/larga/IARC/App access) y un
+  `.aab` compilado. Solo falta pegarlos en Play Console (ver §1.9).
 
 **PWA y despliegue**
 - ✅ **PWA desplegada en [milinkapp.com](https://milinkapp.com)** (Vercel, HTTPS, CDN,
@@ -63,9 +66,16 @@
 
 ## 1. 🔴 Bloqueantes de Play
 
-### 1.9 Assets de ficha (manual, sin código)
-Clasificación IARC, ícono 512×512, gráfico de funciones 1024×500, 2–8 capturas
-por dispositivo, descripción corta y larga, categoría.
+### 1.9 Assets de ficha — ✅ generados, falta pegarlos en Play Console
+Los assets ya están en el repo, en **`playstore-assets/`** (commiteados):
+- ✅ Ícono 512×512 (`icon-512.png`), gráfico de funciones 1024×500
+  (`feature-graphic-1024x500.png`), 6 capturas (`screenshots/`).
+- ✅ Textos de ficha completos (`textos-ficha-play.md`): nombre, descripción corta
+  y larga, categoría, guía de respuestas IARC y nota de "App access" para el revisor.
+- ✅ `.aab` compilado (`application-*.aab`) para subir a pruebas.
+
+**Falta (manual en Play Console, sin código):** pegar los textos, subir imágenes y
+el `.aab`, responder el cuestionario IARC y crear la cuenta de prueba (App access).
 
 ---
 
