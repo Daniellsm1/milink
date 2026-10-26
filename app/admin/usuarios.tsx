@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -86,23 +87,29 @@ export default function UsuariosAdmin() {
   });
 
   const confirmarEliminar = (u: UsuarioRegistrado) => {
-    Alert.alert(
-      "Eliminar usuario",
-      `Esto borrará permanentemente a ${
-        u.nombre || u.email
-      } y todas sus publicaciones, fotos y reseñas. Esta acción es irreversible. ¿Continuar?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: () => {
-            setEliminandoId(u.id);
-            eliminarMut.mutate(u.id);
-          },
-        },
-      ]
-    );
+    const mensaje = `Esto borrará permanentemente a ${
+      u.nombre || u.email
+    } y todas sus publicaciones, fotos y reseñas. Esta acción es irreversible. ¿Continuar?`;
+
+    const ejecutar = () => {
+      setEliminandoId(u.id);
+      eliminarMut.mutate(u.id);
+    };
+
+    // RN-Web ignora los botones de Alert.alert (solo dispara window.alert con el
+    // título), así que la confirmación en web va por window.confirm. Gotcha #17.
+    if (Platform.OS === "web") {
+      const ok =
+        typeof window !== "undefined" &&
+        window.confirm(`Eliminar usuario\n\n${mensaje}`);
+      if (ok) ejecutar();
+      return;
+    }
+
+    Alert.alert("Eliminar usuario", mensaje, [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Eliminar", style: "destructive", onPress: ejecutar },
+    ]);
   };
 
   if (!admin) {
