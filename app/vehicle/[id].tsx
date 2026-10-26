@@ -46,6 +46,7 @@ import {
   type CaracteristicaIcono,
 } from "../../src/data/detail";
 import { useSession } from "../../src/lib/auth";
+import { useFavoritos } from "../../src/lib/favoritos";
 import { reportar } from "../../src/services/reportes";
 import { bloquearUsuario } from "../../src/services/bloqueos";
 import { useWebMaxWidth } from "../../src/lib/responsive";
@@ -80,6 +81,7 @@ export default function DetalleVehiculo() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useSession();
+  const { esFavorito, toggleFavorito } = useFavoritos();
   const queryClient = useQueryClient();
   const webMax = useWebMaxWidth(820);
 
@@ -100,7 +102,6 @@ export default function DetalleVehiculo() {
     enabled: !!user && !!item?.tipo && !!item?.id,
   });
   const contacto = contactoQuery.data ?? null;
-  const [favorito, setFavorito] = useState(false);
   const [carruselW, setCarruselW] = useState(0);
   const [indice, setIndice] = useState(0);
   const [reportVisible, setReportVisible] = useState(false);
@@ -237,6 +238,12 @@ export default function DetalleVehiculo() {
     );
   }
 
+  const favorito = esFavorito(item.id);
+  const onPressFavorito = () => {
+    if (!exigirSesion("guardar favoritos")) return;
+    void toggleFavorito(item.id, item.tipo ?? "vehiculo");
+  };
+
   const compartir = async () => {
     try {
       await Share.share({
@@ -363,7 +370,7 @@ export default function DetalleVehiculo() {
 
           <View className="flex-row gap-2">
             <Pressable
-              onPress={() => setFavorito((v) => !v)}
+              onPress={onPressFavorito}
               accessibilityRole="button"
               accessibilityLabel={
                 favorito ? "Quitar de favoritos" : "Agregar a favoritos"
