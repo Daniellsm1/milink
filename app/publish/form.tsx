@@ -72,6 +72,7 @@ export default function PublicarFormulario() {
   const [enviando, setEnviando] = useState(false);
   const [exito, setExito] = useState(false);
   const [errores, setErrores] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const webMax = useWebMaxWidth(680);
 
   // ── Teléfono de contacto (ambos tipos) ──
@@ -162,6 +163,7 @@ export default function PublicarFormulario() {
   ]);
 
   const guardar = async () => {
+    setSubmitError(null);
     if (!tieneTresFotos) {
       Alert.alert("Faltan fotos", "Debes adjuntar exactamente 3 fotografías.");
       return;
@@ -271,10 +273,12 @@ export default function PublicarFormulario() {
       }
       setExito(true);
     } catch (e) {
-      Alert.alert(
-        "No se pudo publicar",
-        e instanceof Error ? e.message : "Ocurrió un error inesperado."
-      );
+      const msg =
+        e instanceof Error ? e.message : "Ocurrió un error inesperado.";
+      // En React Native Web, Alert.alert no muestra nada (gotcha #17), así que
+      // el error quedaba invisible. Lo mostramos inline y lo logueamos.
+      console.error("Error al publicar:", e);
+      setSubmitError(msg);
     } finally {
       setEnviando(false);
     }
@@ -434,6 +438,16 @@ export default function PublicarFormulario() {
           className="px-5 pt-3 pb-5 border-t border-line bg-white"
           style={webMax ?? undefined}
         >
+          {submitError ? (
+            <View className="mb-3 rounded-2xl bg-red-50 border border-red-200 px-4 py-3">
+              <Text className="text-[13px] text-red-600 font-quicksand-semibold">
+                No se pudo publicar
+              </Text>
+              <Text className="text-[13px] text-red-600 font-quicksand-medium mt-0.5">
+                {submitError}
+              </Text>
+            </View>
+          ) : null}
           <Pressable
             onPress={guardar}
             disabled={!puedeGuardar || enviando}
